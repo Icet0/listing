@@ -3,6 +3,7 @@ from msilib.schema import Error
 import pandas as pd
 import numpy as np
 import copy
+import netoyage_CDProject.netoyage_cdp as ncdp
 from hubspot_api.requests import owner
 from interface.interface import my_app
 import netoyage_scrapio.netoyage as nsrap
@@ -162,8 +163,193 @@ def assign_specified_owner(df_clean,owner):
     
     
 
-def netoyage_CdProject(df,FICHIER_INTPUT,hapikey,owner_selected):
-    print("Hello world")
+def netoyage_CdProject(df,FICHIER_OUTPUT,hapikey,owner_selected):
+    df_CDProject_tmp = df.copy()
+    (df_CDProject_tmp.drop_duplicates(subset =["Téléphone 1","Nom","Email"], keep = 'first', inplace=True))
+    df_CDProject_tmp['Nom'] = df_CDProject_tmp.apply(lambda x: x['Nom'] if (not pd.isna(x['Email']) or (not pd.isna(x["Téléphone 2"]))
+                                                            or (not pd.isna(x["Téléphone 1"]))) else np.nan, axis = 1)
+    df_CDProject_tmp = df_CDProject_tmp[df_CDProject_tmp['Nom'].notna()]
+
+
+
+    #Clean tel 1
+    df_CDProject_tmp = df_CDProject_tmp.rename(columns={"Téléphone 1":"Téléphone"})
+
+    df_CDProject_tmp['Téléphone'] = df_CDProject_tmp.apply(lambda x: str(int(float(x['Téléphone']))) if(not pd.isna(x["Téléphone"]))
+                                                        else str(x["Téléphone"]) ,axis=1)
+    df_CDProject_tmp['Téléphone'] = df_CDProject_tmp.apply(lambda x: '+'+str(x["Téléphone"]) if( not pd.isna(x['Téléphone']) )
+                                                                                                else str(x['Téléphone']),axis=1)
+
+    df_CDProject_tmp = nsrap.netoyage_tel(df_CDProject_tmp)
+
+    #CLean tel 2
+
+    df_CDProject_tmp['Téléphone 2'] = df_CDProject_tmp.apply(lambda x: str(int(float(x['Téléphone 2']))) if(not pd.isna(x["Téléphone 2"]))
+                                                        else str(x["Téléphone 2"]) ,axis=1)
+    df_CDProject_tmp['Téléphone 2'] = df_CDProject_tmp.apply(lambda x: '+'+str(x["Téléphone 2"]) if( not pd.isna(x['Téléphone 2']) )
+                                                                                                else str(x['Téléphone 2']),axis=1)
+
+    df_CDProject_tmp = ncdp.netoyage_tel2(df_CDProject_tmp)
+
+
+        #Adresse
+    df_CDProject_tmp = df_CDProject_tmp.rename(columns={"Adresse 2":"Adresse"})
+    df_CDProject_tmp = df_CDProject_tmp.rename(columns={"Adresse 1":"Adresse complémentaire"})
+
+
+    #Clean effectif
+    df_CDProject_tmp['Effectif'] = df_CDProject_tmp.apply(lambda x: x["Effectif"] if (x["Effectif"] != "0" and x["Effectif"]!= "Inconnu")
+                                                        else '',axis = 1)
+
+    #Activités
+    df_CDProject_tmp = df_CDProject_tmp.rename(columns={"Activité.1":"Activités secondaires"})
+    df_CDProject_tmp = ncdp.netoyage_activites(df_CDProject_tmp)
+
+    #Netoyage global
+    df_CDProject_tmp = ncdp.globalClean_CDProject(df_CDProject_tmp)
+
+    #Spr des nan
+    df_CDProject_tmp = df_CDProject_tmp.replace(np.nan,'')
+    df_CDProject_tmp = df_CDProject_tmp.replace('nan','')
+    df_CDProject_tmp = df_CDProject_tmp.replace('NaN','')
+    
+
+
+    # API Call
+    # ASSIGN Des owner
+    if(owner_selected=="random"):
+        df_CDProject_tmp = assign_random_owner(hapikey,df_CDProject_tmp)
+    else:
+        df_CDProject_tmp = assign_specified_owner(df_CDProject_tmp,owner_selected)    
+    
+    #Ajout last col (lead status)
+    df_CDProject_tmp = df_CDProject_tmp.assign(leadStatus="NEW")
+    
+    #Spr doublons
+    df_CDProject_tmp.drop_duplicates(subset =["Téléphone","Nom","Email"], keep = 'first', inplace=True)
+
+    # EXPORT CSV
+    df_CDProject_tmp.to_csv(FICHIER_OUTPUT,index=False,encoding='utf-8')
+
+    print("TO CSV OK !!")
+    data = {
+    "name": "Test import by api w OWNER",
+    "files": [
+        {
+        "fileName": "output_bundle.csv",
+        "fileFormat": "CSV",
+        "dateFormat": "DAY_MONTH_YEAR",
+        "fileImportPage": {
+            "hasHeader": True,
+            "columnMappings": [
+            {
+                "columnObjectTypeId": "0-2",
+                "columnName": "Nom",
+                "propertyName": "name",
+                "idColumnType": None
+            },
+                            {
+                "columnObjectTypeId": "0-2",
+                "columnName": "Adresse",
+                "propertyName": "address",
+                "idColumnType": None
+            },
+                {
+                "columnObjectTypeId": "0-2",
+                "columnName": "Adresse complémentaire",
+                "propertyName": "address2",
+                "idColumnType": None
+            },
+               {
+                "columnObjectTypeId": "0-2",
+                "columnName": "Code postal",
+                "propertyName": "zip",
+                "idColumnType": None
+            },
+                {
+                "columnObjectTypeId": "0-2",
+                "columnName": "Ville",
+                "propertyName": "city",
+                "idColumnType": None
+            },
+
+                {
+                "columnObjectTypeId": "0-2",
+                "columnName": "Téléphone",
+                "propertyName": "phone",
+                "idColumnType": None
+            },
+                {
+                "columnObjectTypeId": "0-2",
+                "columnName": "Téléphone suplémentaire",
+                "propertyName": "telephones",
+                "idColumnType": None
+            },
+                {
+                "columnObjectTypeId": "0-2",
+                "columnName": "SIRET",
+                "propertyName": "siret",
+                "idColumnType": None
+            },
+                {
+                "columnObjectTypeId": "0-2",
+                "columnName": "Effectif",
+                "propertyName": "effectif",
+                "idColumnType": None
+            },
+                {
+                "columnObjectTypeId": "0-2",
+                "columnName": "Email",
+                "propertyName": "emails",
+                "idColumnType": None
+            },
+            {
+                "columnObjectTypeId": "0-2",
+                "columnName": "Responsable",
+                "propertyName": "responsable",
+                "idColumnType": None
+            },
+                {
+                "columnObjectTypeId": "0-2",
+                "columnName": "Activité",
+                "propertyName": "secteurs_d_activite",
+                "idColumnType": None
+            },
+                {
+                "columnObjectTypeId": "0-2",
+                "columnName": "Type principal",
+                "propertyName": "activites_secondaire",
+                "idColumnType": None
+            },
+                {
+                "columnObjectTypeId": "0-2",
+                "columnName": "provenance",
+                "propertyName": "provenance_donnee",
+                "idColumnType": None
+            },
+
+                {
+                "columnObjectTypeId": "0-2",
+                "columnName": "owner",
+                "propertyName": "hubspot_owner_id",
+                "idColumnType": None
+            },
+                {
+                "columnObjectTypeId": "0-2",
+                "columnName": "leadStatus",
+                "propertyName": "hs_lead_status",
+                "idColumnType": None
+            },
+                
+                
+            ]
+        }
+        }
+    ]
+    }
+    
+    # EXPORT HUBSPOT
+    insert.insertion_hubspot(FICHIER_OUTPUT,hapikey,data)
     
 
 
@@ -213,9 +399,138 @@ def netoyage_scraperIo(df,FICHIER_OUTPUT,hapikey,owner_selected):
     df_clean.to_csv(FICHIER_OUTPUT,index=False,encoding='utf-8')
 
     print("TO CSV OK !!")
-
+    data = {
+    "name": "Test import by api w OWNER",
+    "files": [
+        {
+        "fileName": "output_bundle.csv",
+        "fileFormat": "CSV",
+        "dateFormat": "DAY_MONTH_YEAR",
+        "fileImportPage": {
+            "hasHeader": True,
+            "columnMappings": [
+            {
+                "columnObjectTypeId": "0-2",
+                "columnName": "Nom",
+                "propertyName": "name",
+                "idColumnType": None
+            },
+            {
+                "columnObjectTypeId": "0-2",
+                "columnName": "Type principal",
+                "propertyName": "secteurs_d_activite",
+                "idColumnType": None
+            },
+    #           {
+    #             "columnObjectTypeId": "0-2",
+    #             "columnName": "Tous les types",
+    #             "propertyName": "Tous_les_types",
+    #             "idColumnType": None
+    #           },
+                {
+                "columnObjectTypeId": "0-2",
+                "columnName": "Site internet (url racine)",
+                "propertyName": "website",
+                "idColumnType": None
+            },
+                {
+                "columnObjectTypeId": "0-2",
+                "columnName": "Téléphone",
+                "propertyName": "phone",
+                "idColumnType": None
+            },
+                {
+                "columnObjectTypeId": "0-2",
+                "columnName": "Téléphone suplémentaire",
+                "propertyName": "telephones",
+                "idColumnType": None
+            },
+                {
+                "columnObjectTypeId": "0-2",
+                "columnName": "Fuseau horaire",
+                "propertyName": "timezone",
+                "idColumnType": None
+            },
+                {
+                "columnObjectTypeId": "0-2",
+                "columnName": "Adresse 1",
+                "propertyName": "address",
+                "idColumnType": None
+            },
+                {
+                "columnObjectTypeId": "0-2",
+                "columnName": "Ville",
+                "propertyName": "city",
+                "idColumnType": None
+            },
+                {
+                "columnObjectTypeId": "0-2",
+                "columnName": "Code postal",
+                "propertyName": "zip",
+                "idColumnType": None
+            },
+                {
+                "columnObjectTypeId": "0-2",
+                "columnName": "Etat",
+                "propertyName": "state",
+                "idColumnType": None
+            },
+    #             {
+    #             "columnObjectTypeId": "0-2",
+    #             "columnName": "Division de niveau 2",
+    #             "propertyName": "Division_de_niveau_2",
+    #             "idColumnType": None
+    #           },
+                {
+                "columnObjectTypeId": "0-2",
+                "columnName": "Pays",
+                "propertyName": "country",
+                "idColumnType": None
+            },
+                {
+                "columnObjectTypeId": "0-2",
+                "columnName": "Email",
+                "propertyName": "emails",
+                "idColumnType": None
+            },
+                {
+                "columnObjectTypeId": "0-2",
+                "columnName": "Page de contact 1",
+                "propertyName": "pages_de_contacts",
+                "idColumnType": None
+            },
+                {
+                "columnObjectTypeId": "0-2",
+                "columnName": "Lien_réseaux_sociaux",
+                "propertyName": "lien_reseaux_sociaux",
+                "idColumnType": None
+            },
+                {
+                "columnObjectTypeId": "0-2",
+                "columnName": "provenance",
+                "propertyName": "provenance_donnee",
+                "idColumnType": None
+            },
+                {
+                "columnObjectTypeId": "0-2",
+                "columnName": "owner",
+                "propertyName": "hubspot_owner_id",
+                "idColumnType": None
+            },
+                {
+                "columnObjectTypeId": "0-2",
+                "columnName": "leadStatus",
+                "propertyName": "hs_lead_status",
+                "idColumnType": None
+            },
+                
+            ]
+        }
+        }
+    ]
+    }
     # EXPORT HUBSPOT
-    insert.insertion_hubspot(FICHIER_OUTPUT,hapikey)
+    insert.insertion_hubspot(FICHIER_OUTPUT,hapikey,data)
     
     
     

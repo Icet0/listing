@@ -4,13 +4,23 @@ import numpy as np
 
 
 def clean_TelInternational(input):
-    if(not pd.isna(input)):
+    if(not pd.isna(input) and input !='nan'):
         sInit = str(int(input))
-        ref_fr = 11 #2num après le +
-        nb_pays = len(sInit)-ref_fr+2
-        s = sInit[nb_pays+1:]
-        s = ' '.join(s[i:i+2] for i in range(0, len(s), 2))
-        final = "+"+sInit[0:nb_pays]+' '+sInit[nb_pays]+' '+s
+        if(len(sInit) == 9):
+            #def comme fr par défaut
+            nb_pays = 2
+            s = sInit
+            s = ' '.join(s[i:i+2] for i in range(1, 9, 2))
+            final = "+33 "+sInit[0]+' '+s
+            
+            
+        else:
+            
+            ref_fr = 11 #2num après le +
+            nb_pays = len(sInit)-ref_fr+2
+            s = sInit[nb_pays+1:]
+            s = ' '.join(s[i:i+2] for i in range(0, len(s), 2))
+            final = "+"+sInit[0:nb_pays]+' '+sInit[nb_pays]+' '+s
         return final
 
     else:
@@ -20,7 +30,7 @@ def netoyage_tel(df):
     df_tmp = df.copy()
     for r in df.iterrows():
         tmp = str(r[1]["Téléphone"])
-        if(tmp[0]!='n'):
+        if(tmp[0]!='n' and tmp[1]!='n'):
             tmp = tmp[1:]
             df_clean1 = clean_TelInternational(tmp.replace(' ',''))
         else:
@@ -191,6 +201,12 @@ def globalClean(input):
                        'Division de niveau 2','Nom du propriétaire','Tous les emails','Toutes les pages de contact',
                         'Code pays','Tous les types','État'
                        ],axis=1)
+    
+    input = input.rename(columns={"Type principal":"Activité"})
+    input = input.rename(columns={"Téléphone international":"Téléphone suplémentaire"})
+    input = input.rename(columns={"Division de niveau 1":"Etat"})
+    input = input.assign(provenance="scrap.io")
+
     
         
     return input
