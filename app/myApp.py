@@ -16,7 +16,7 @@ from os import path
 
 
 def main():
-    hapikey="pat-eu1-91242dbb-e9d6-4b77-852f-fdd31151e049"#"pat-eu1-91242dbb-e9d6-4b77-852f-fdd31151e049"
+    hapikey="pat-eu1-91242dbb-e9d6-4b77-852f-fdd31151e049"#"pat-eu1-26e9ca6f-6614-4320-b7eb-15b6ec1d25fe" cpt test
     bundle_dir = path.abspath(path.dirname(__file__)) 
     path_to_dat = path.join(bundle_dir,"OUTPUT")
     try:
@@ -231,6 +231,8 @@ def netoyage_CdProject(df,FICHIER_OUTPUT,hapikey,owner_selected):
     
     #Spr doublons
     df_CDProject_tmp.drop_duplicates(subset =["Téléphone","Nom","Email"], keep = 'first', inplace=True)
+    df_CDProject_tmp = df_CDProject_tmp[(df_CDProject_tmp['Téléphone'] != '' ) | (df_CDProject_tmp['Email'] !='') | (df_CDProject_tmp['Téléphone 2']!= '')]
+
 
     # EXPORT CSV
     df_CDProject_tmp.to_csv(FICHIER_OUTPUT,index=False,encoding='utf-8')
@@ -398,6 +400,8 @@ def netoyage_scraperIo(df,FICHIER_OUTPUT,hapikey,owner_selected):
     
     #Spr doublons
     df_clean.drop_duplicates(subset =["Téléphone","Nom","Email"], keep = 'first', inplace=True)
+    df_clean = df_clean[(df_clean['Téléphone'] != '' ) | (df_clean['Email'] !='') | (df_clean['Téléphone suplémentaire']!= '')
+                   | (df_clean['Site internet (url racine)']!= '') | (df_clean['Page de contact 1']!= '')]
 
     # EXPORT CSV
     df_clean.to_csv(FICHIER_OUTPUT,index=False,encoding='utf-8')
