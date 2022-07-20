@@ -11,6 +11,9 @@ You can download this repository and access to the executable in the directory :
 # Compilation
 
 Se placer dans le dossier app
+
 $cd app
-<!-- and use -->
+
+et utiliser 
+
 $ pyinstaller -F myApp
