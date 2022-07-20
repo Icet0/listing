@@ -167,6 +167,7 @@ def my_app():
 
     def estOK():
         print("hapikey get after inster :  "+hapikey.get())
+        os.environ["hapikey"]=hapikey.get()
         try:
             list_owner = []
             response = get_owner(hapikey.get())
@@ -182,7 +183,6 @@ def my_app():
     text = Entry(frm,textvariable = hapikey,validate='key',).grid(column=2,row=3,padx=15,pady=5)
     b_val = Button(frm,text="Valider",command=estOK).grid(column=2,row=4)
     # text.insert('1.0',hapikey.get())
-    os.environ["hapikey"]=hapikey.get()
 
 
 

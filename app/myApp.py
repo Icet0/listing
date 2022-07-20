@@ -22,7 +22,7 @@ def main():
     try:
         os.mkdir(path_to_dat)
     except OSError as error:
-        print(error) 
+        print(error)
     path_to_dat = path.join(path_to_dat,"output_bundle.csv")
 
     print(path_to_dat)
@@ -63,6 +63,7 @@ def main():
 
     print("Fichier input after : "+FICHIER_INPUT)
     print("Owener selected after : "+owner_selected)
+    print("Hapikey after : "+hapikey)
 
     ####################
     

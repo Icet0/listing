@@ -1,3 +1,4 @@
+from httplib2 import Authentication
 import requests
 import json
 
@@ -6,8 +7,9 @@ def insertion_hubspot(FICHIER_OUTPUT,api_key,data):
     # insert your api key here
     url = "https://api.hubapi.com/crm/v3/imports"
     headers = {
-      'content-type': 'application/json',
-      'authorization': 'Bearer %s' % api_key
+      # 'content-type': 'multipart/form-data',
+      # 'accept': 'application/json',
+      'Authorization': 'Bearer %s' % api_key
     }
     data =  data
 

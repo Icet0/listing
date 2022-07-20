@@ -23,8 +23,7 @@ def getOwners_nb_cmpn(id_owner,api_key): #&hapikey="+str(api_key)
     url = "https://api.hubapi.com/crm/v3/objects/companies/search?properties=hubspot_owner_id"
     headers={
         'Content-type':'application/json', 
-        'Accept':'application/json',
-        'authorization': 'Bearer %s' % api_key
+        'authorization': 'Bearer %s' %api_key
 
     }
     body = {
@@ -48,10 +47,15 @@ def getOwners_nb_cmpn(id_owner,api_key): #&hapikey="+str(api_key)
         }
       ],
 
-      "limit": 10,
+      "limit": 30,
       "after": 0
     }
     response = requests.request("POST", url,json=body,headers=headers)
+    
+    print(response.encoding)
+    print(response.text.encode('utf8'))
+    print(response.status_code)
+    
     print(response.json()['total'])
     return response.json()['total']
 
