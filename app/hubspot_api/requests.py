@@ -4,8 +4,12 @@ import os
 
 
 def get_owner(api_key):
-    url = "https://api.hubapi.com/crm/v3/owners?hapikey="+str(api_key)
-    response = requests.request("GET", url)
+    url = "https://api.hubapi.com/crm/v3/owners"
+    headers = {
+      'content-type': 'application/json',
+      'authorization': 'Bearer %s' % api_key
+    }
+    response = requests.request("GET", url,headers=headers)
     print(response.content)
     return response
 
@@ -15,11 +19,13 @@ class owner:
     nb_cmpn = 0
     pourcentage_cmpn = 0
     
-def getOwners_nb_cmpn(id_owner,api_key):
-    url = "https://api.hubapi.com/crm/v3/objects/companies/search?properties=hubspot_owner_id&hapikey="+str(api_key)
+def getOwners_nb_cmpn(id_owner,api_key): #&hapikey="+str(api_key)
+    url = "https://api.hubapi.com/crm/v3/objects/companies/search?properties=hubspot_owner_id"
     headers={
         'Content-type':'application/json', 
-        'Accept':'application/json'
+        'Accept':'application/json',
+        'authorization': 'Bearer %s' % api_key
+
     }
     body = {
       "filterGroups": [

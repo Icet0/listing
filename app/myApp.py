@@ -16,7 +16,7 @@ from os import path
 
 
 def main():
-    hapikey="eu1-d719-6d0e-44d8-8841-fa8980bbf069"
+    hapikey="pat-eu1-91242dbb-e9d6-4b77-852f-fdd31151e049"#"pat-eu1-91242dbb-e9d6-4b77-852f-fdd31151e049"
     bundle_dir = path.abspath(path.dirname(__file__)) 
     path_to_dat = path.join(bundle_dir,"OUTPUT")
     try:
@@ -52,12 +52,15 @@ def main():
     # list_owner.append("azertyuiop@gmail.com")
     #Lancement de l'app
     print("Fichier input before : "+FICHIER_INPUT)
+    os.environ['hapikey'] = hapikey
     os.environ['list_owner'] = str(list_owner)
     os.environ['FICHIER_INPUT'] = FICHIER_INPUT
     os.environ['owner_selected'] = owner_selected
     my_app()
     FICHIER_INPUT = os.environ.get("FICHIER_INPUT")
     owner_selected = os.environ.get("owner_selected")
+    hapikey = os.environ.get("hapikey")
+
     print("Fichier input after : "+FICHIER_INPUT)
     print("Owener selected after : "+owner_selected)
 

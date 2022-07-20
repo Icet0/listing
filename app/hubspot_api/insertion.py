@@ -4,8 +4,11 @@ import json
 
 def insertion_hubspot(FICHIER_OUTPUT,api_key,data):
     # insert your api key here
-    url = "https://api.hubapi.com/crm/v3/imports?hapikey="+str(api_key)
-
+    url = "https://api.hubapi.com/crm/v3/imports"
+    headers = {
+      'content-type': 'application/json',
+      'authorization': 'Bearer %s' % api_key
+    }
     data =  data
 
 
@@ -24,7 +27,7 @@ def insertion_hubspot(FICHIER_OUTPUT,api_key,data):
     print(files)
 
 
-    response = requests.request("POST", url, data=payload, files=files)
+    response = requests.request("POST", url, data=payload, files=files,headers=headers)
     print(response.encoding)
     print(response.text.encode('utf8'))
     print(response.status_code)
