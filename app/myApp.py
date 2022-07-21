@@ -100,16 +100,25 @@ def main():
         
 
 
-def assign_random_owner(hapikey,df_clean,):
+def assign_random_owner(hapikey,df_clean,nomTeams = "Sales"):
     response = req.get_owner(hapikey)
     nb_owner = len(response.json()['results'])
     list_owner = []
     for i in range(nb_owner):
-        x = req.owner()
-        x.id=response.json()['results'][i]['email']
-        print("x id : "+str(x.id))
-        x.nb_cmpn = req.getOwners_nb_cmpn(x.id,hapikey)
-        list_owner.append(x)
+        try:
+            for t in response.json()['results'][i]['teams']:
+                if t["name"]==nomTeams:
+
+                    x = req.owner()
+                    x.id=response.json()['results'][i]['id']
+                    x.nb_cmpn = req.getOwners_nb_cmpn(x.id,hapikey)
+                    x.id=response.json()['results'][i]['email']
+                    print("x id : "+str(x.id))
+                    list_owner.append(x)
+                else:
+                    raise
+        except:
+            print(str(i)+"  N'est pas dans la team "+nomTeams)
 
 
     total_nv_cmpn_restante = 0
@@ -118,31 +127,22 @@ def assign_random_owner(hapikey,df_clean,):
         total_nv_cmpn_restante+=item.nb_cmpn
         moyenne_nb_cmpn+=item.nb_cmpn
     moyenne_nb_cmpn = moyenne_nb_cmpn / len(list_owner)
-    print(total_nv_cmpn_restante)
+    print("nb total nv cmpn restante : " + str(total_nv_cmpn_restante))
 
     #On essaye de lisser le pourcentage pour prendre en compte les écarts
     if(moyenne_nb_cmpn > 0):
         coef_lissage = len(df_clean) / moyenne_nb_cmpn
     else:
         coef_lissage = 0
-
-
-    # tab =[]
-    # for item in list_owner:
-    #     tab.append(item.nb_cmpn)
-    # print(tab)
-    # std = np.std(tab, axis=None)
-    # coef_variation = std/moyenne_nb_cmpn
-    # print("coef_variation : "+str(coef_variation))
-
-
+    print('coef lissage ' + str(coef_lissage))
 
 
     for item in list_owner:
         if(total_nv_cmpn_restante!=0):
             item.pourcentage_cmpn = ((item.nb_cmpn+coef_lissage)/(total_nv_cmpn_restante+(coef_lissage*len(list_owner)))) * 100    
         else:
-            item.pourcentage_cmpn = 0
+            item.pourcentage_cmpn = ( (len(df_clean)/(len(list_owner)))/ (len(df_clean)) ) * 100
+
         print(str(item.id) + ' : ' + str(item.pourcentage_cmpn))
         
     list_owner.sort(reverse = False,key=lambda x: x.pourcentage_cmpn) #On commence par le plus grand pourcentage
@@ -156,8 +156,9 @@ def assign_random_owner(hapikey,df_clean,):
         i+=1
         j-=1
         
-    df_clean = req.assign_owner(df_clean,list_owner)
-    return df_clean
+    df_clean_tmp = req.assign_owner((df_clean.copy()).reset_index(drop=True),list_owner)
+    print(df_clean_tmp)
+    return df_clean_tmp
 
 def assign_specified_owner(df_clean,owner):
     list_owner = []
@@ -219,6 +220,12 @@ def netoyage_CdProject(df,FICHIER_OUTPUT,hapikey,owner_selected):
     
 
 
+    
+    
+    #Spr doublons
+    df_CDProject_tmp.drop_duplicates(subset =["Téléphone","Nom","Email"], keep = 'first', inplace=True)
+    df_CDProject_tmp = df_CDProject_tmp[(df_CDProject_tmp['Téléphone'] != '' ) | (df_CDProject_tmp['Email'] !='') | (df_CDProject_tmp['Téléphone 2']!= '')]
+
     # API Call
     # ASSIGN Des owner
     if(owner_selected=="random"):
@@ -228,11 +235,6 @@ def netoyage_CdProject(df,FICHIER_OUTPUT,hapikey,owner_selected):
     
     #Ajout last col (lead status)
     df_CDProject_tmp = df_CDProject_tmp.assign(leadStatus="NEW")
-    
-    #Spr doublons
-    df_CDProject_tmp.drop_duplicates(subset =["Téléphone","Nom","Email"], keep = 'first', inplace=True)
-    df_CDProject_tmp = df_CDProject_tmp[(df_CDProject_tmp['Téléphone'] != '' ) | (df_CDProject_tmp['Email'] !='') | (df_CDProject_tmp['Téléphone 2']!= '')]
-
 
     # EXPORT CSV
     df_CDProject_tmp.to_csv(FICHIER_OUTPUT,index=False,encoding='utf-8')
@@ -257,13 +259,13 @@ def netoyage_CdProject(df,FICHIER_OUTPUT,hapikey,owner_selected):
                             {
                 "columnObjectTypeId": "0-2",
                 "columnName": "Adresse",
-                "propertyName": "address",
+                "propertyName": "address2",
                 "idColumnType": None
             },
                 {
                 "columnObjectTypeId": "0-2",
                 "columnName": "Adresse complémentaire",
-                "propertyName": "address2",
+                "propertyName": "address",
                 "idColumnType": None
             },
                {
@@ -388,20 +390,23 @@ def netoyage_scraperIo(df,FICHIER_OUTPUT,hapikey,owner_selected):
     
 
 
+
+    
+    #Spr doublons
+    df_clean.drop_duplicates(subset =["Téléphone","Nom","Email"], keep = 'first', inplace=True)
+    df_clean = df_clean[(df_clean['Téléphone'] != '' ) | (df_clean['Email'] !='') | (df_clean['Téléphone suplémentaire']!= '')
+                   | (df_clean['Site internet (url racine)']!= '') | (df_clean['Page de contact 1']!= '')]
+
+
     # API Call
     # ASSIGN Des owner
     if(owner_selected=="random"):
         df_clean = assign_random_owner(hapikey,df_clean)
     else:
         df_clean = assign_specified_owner(df_clean,owner_selected)    
-    
     #Ajout last col (lead status)
     df_clean = df_clean.assign(leadStatus="NEW")
     
-    #Spr doublons
-    df_clean.drop_duplicates(subset =["Téléphone","Nom","Email"], keep = 'first', inplace=True)
-    df_clean = df_clean[(df_clean['Téléphone'] != '' ) | (df_clean['Email'] !='') | (df_clean['Téléphone suplémentaire']!= '')
-                   | (df_clean['Site internet (url racine)']!= '') | (df_clean['Page de contact 1']!= '')]
 
     # EXPORT CSV
     df_clean.to_csv(FICHIER_OUTPUT,index=False,encoding='utf-8')
