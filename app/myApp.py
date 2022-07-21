@@ -164,7 +164,7 @@ def assign_specified_owner(df_clean,owner):
     list_owner = []
     list_owner.append(req.owner())
     list_owner[0].id=owner
-    return req.assign_owner(df_clean,list_owner)
+    return req.assign_owner((df_clean.copy()).reset_index(drop=True),list_owner)
     
     
 
