@@ -21,38 +21,58 @@ def netoyage_tel2(df):
 
 
 def netoyage_activites(input):
-    
-    input["Activités secondaires"] = input.apply(lambda x : str(x["Activités secondaires"]) +' / '+ str(x["Activité.2"]) 
-                                                         if not pd.isna(x["Activités secondaires"])  and not pd.isna(x["Activité.2"]) and x["Activité.2"] not in x["Activités secondaires"] 
-                                                         else x["Activités secondaires"] if not pd.isna(x["Activités secondaires"])
-                                                                                                   else x["Activité.2"]
-                                                                                                         if (not pd.isna(x["Activité.2"]))
-                                                                                                         else np.nan,axis=1)
-                                                
-    input["Activités secondaires"] = input.apply(lambda x : str(x["Activités secondaires"]) +' / '+ str(x["Activité.3"]) 
-                                                         if not pd.isna(x["Activité.3"]) and str(x["Activité.3"]) not in str(x["Activités secondaires"])
-                                                         else x["Activités secondaires"]
-                                                                if (not pd.isna(x['Activités secondaires']))
+    try:
+        input["Activités secondaires"] = input.apply(lambda x : str(x["Activités secondaires"]) +' / '+ str(x["Activité.2"]) 
+                                                            if not pd.isna(x["Activités secondaires"])  and not pd.isna(x["Activité.2"]) and x["Activité.2"] not in x["Activités secondaires"] 
+                                                            else x["Activités secondaires"] if not pd.isna(x["Activités secondaires"])
+                                                                                                    else x["Activité.2"]
+                                                                                                            if (not pd.isna(x["Activité.2"]))
+                                                                                                            else np.nan,axis=1)
+                                                    
+        input["Activités secondaires"] = input.apply(lambda x : str(x["Activités secondaires"]) +' / '+ str(x["Activité.3"]) 
+                                                            if not pd.isna(x["Activité.3"]) and str(x["Activité.3"]) not in str(x["Activités secondaires"])
+                                                            else x["Activités secondaires"]
+                                                                    if (not pd.isna(x['Activités secondaires']))
+                                                                    else np.nan,axis=1)
+
+        input["Activités secondaires"] = input.apply(lambda x : str(x["Activités secondaires"]) +' / '+ str(x["Activité.4"]) 
+                                                            if not pd.isna(str(x["Activité.4"])) and str(x["Activité.4"]) not in str(x["Activités secondaires"]) 
+                                                            else str(x["Activités secondaires"])
+                                                                if not pd.isna(str(x['Activités secondaires']))
                                                                 else np.nan,axis=1)
 
-    input["Activités secondaires"] = input.apply(lambda x : str(x["Activités secondaires"]) +' / '+ str(x["Activité.4"]) 
-                                                         if not pd.isna(str(x["Activité.4"])) and str(x["Activité.4"]) not in str(x["Activités secondaires"]) 
-                                                         else str(x["Activités secondaires"])
-                                                            if not pd.isna(str(x['Activités secondaires']))
-                                                            else np.nan,axis=1)
+        
+        input["Activités secondaires"] = input.apply(lambda x: x["Activités secondaires"].replace(" nan",''),axis=1)
+        input["Activités secondaires"] = input.apply(lambda x: x["Activités secondaires"].replace("nan",''),axis=1)
+    except:
+        input = input.assign(actsecondaire="")
+        input = input.rename(columns={"actsecondaire":"Activités secondaires"})
 
-    
-    input["Activités secondaires"] = input.apply(lambda x: x["Activités secondaires"].replace(" nan",''),axis=1)
-    input["Activités secondaires"] = input.apply(lambda x: x["Activités secondaires"].replace("nan",''),axis=1)
-
+        print("error dans nétoyage activité")
     return input
 
 
 
 def globalClean_CDProject(input):
-    input = input.drop(['Fax','NAF','Activité.2','Activité.3','Activité.4'
-                       ],axis=1).reset_index(drop=True)
-    
+    try:
+        if("Activité.2" in input.columns):
+            if("Activité.3" in input.columns):
+                if("Activité.4" in input.columns):
+                    input = input.drop(['Fax','Activité.2','Activité.3','Activité.4'
+                            ],axis=1).reset_index(drop=True)
+                else:
+                    input = input.drop(['Fax','Activité.2','Activité.3'
+                            ],axis=1).reset_index(drop=True)
+            else:
+                input = input.drop(['Fax','Activité.2'
+                            ],axis=1).reset_index(drop=True)
+            
+        else:
+            print("\n\ndrop fax\n\n")
+            input = input.drop(['Fax'
+                            ],axis=1).reset_index(drop=True)
+    except:
+        print("error dans global clean cd project")    
     input = input.assign(provenance="CDProject")
 
     return input

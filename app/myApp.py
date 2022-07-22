@@ -241,7 +241,7 @@ def netoyage_CdProject(df,FICHIER_OUTPUT,hapikey,owner_selected):
 
     print("TO CSV OK !!")
     data = {
-    "name": "Test import by api w OWNER",
+    "name": os.environ.get("name_fichier"),
     "files": [
         {
         "fileName": "output_bundle.csv",
@@ -291,6 +291,12 @@ def netoyage_CdProject(df,FICHIER_OUTPUT,hapikey,owner_selected):
                 "columnObjectTypeId": "0-2",
                 "columnName": "Téléphone suplémentaire",
                 "propertyName": "telephones",
+                "idColumnType": None
+            },
+                {
+                "columnObjectTypeId": "0-2",
+                "columnName": "NAF",
+                "propertyName": "naf",
                 "idColumnType": None
             },
                 {
@@ -413,7 +419,7 @@ def netoyage_scraperIo(df,FICHIER_OUTPUT,hapikey,owner_selected):
 
     print("TO CSV OK !!")
     data = {
-    "name": "Test import by api w OWNER",
+    "name": os.environ.get("name_fichier"),
     "files": [
         {
         "fileName": "output_bundle.csv",

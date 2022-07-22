@@ -46,6 +46,7 @@ def my_app():
         name_tmp = name_tmp.get().split('/')[-1]
         if('.csv' in name_tmp) or ('.CSV' in name_tmp):
             mon_fichier_cours.set(name_tmp)
+            os.environ['name_fichier']= mon_fichier_cours.get()
             changeState(b_running)
         else:
             mon_fichier_cours.set("Mauvaise extention de fichier")
