@@ -74,8 +74,11 @@ def main():
     except:
         try:
             df_csv = pd.read_csv (str(FICHIER_INPUT),sep=";",encoding='latin-1')
-        except Error:
-            print('read_csv error : '+str(Error))
+        except:
+            try:
+                df_csv = pd.read_csv (str(FICHIER_INPUT),sep="\t",encoding='utf8')
+            except Error :
+                print('read_csv error : '+str(Error))
 
     print(df_csv.columns)
     df = pd.DataFrame(df_csv)
