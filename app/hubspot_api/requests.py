@@ -1,4 +1,4 @@
-from msilib.schema import Error
+# from msilib.schema import Error
 import requests
 import json
 import os
@@ -84,7 +84,7 @@ def assign_owner(df,list_owner):
                 # print("range else = "+str(ligne_prec)+ ' to ' + str(taille))
 
             cpt+=1
-    except Error:
-        print('Error in assign_owner' + str(Error))
+    except:
+        print('Error in assign_owner' + str("!"))
     # print(df['owner'])
     return df
