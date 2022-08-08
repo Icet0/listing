@@ -11,7 +11,7 @@ import hubspot_api.requests as req
 import hubspot_api.insertion as insert
 import os
 from os import path
-
+import google_sheet_api.sheet_api as sa
 
 
 
@@ -60,6 +60,8 @@ def main():
     FICHIER_INPUT = os.environ.get("FICHIER_INPUT")
     owner_selected = os.environ.get("owner_selected")
     hapikey = os.environ.get("hapikey")
+    name_fichier = os.environ.get("name_fichier")
+
 
     print("Fichier input after : "+FICHIER_INPUT)
     print("Owener selected after : "+owner_selected)
@@ -89,17 +91,6 @@ def main():
         flag = 1
         netoyage_CdProject(df,FICHIER_OUTPUT,hapikey,owner_selected)
         
-        
-
-    
-    # if(flag):
-    #     #On lance le nétoyage CD_Project
-    #     netoyage_CdProject(df,FICHIER_OUTPUT,hapikey)
-    # elif(not flag):
-    #     df.drop(df.tail(3).index, 
-    #         inplace = True)
-    #     #On lance le nétoyage scrap.io
-    #     netoyage_scraperIo(df,FICHIER_OUTPUT,hapikey)
         
 
 
@@ -169,6 +160,13 @@ def assign_specified_owner(df_clean,owner):
     list_owner[0].id=owner
     return req.assign_owner((df_clean.copy()).reset_index(drop=True),list_owner)
     
+def add_refListing(df,name_fichier,origine):
+    ref = sa.add_sheet(name_fichier,origine,len(df))
+    df = df.assign(Ref=ref)
+    df = df.assign(Nom_listing=name_fichier)
+    return df
+
+
     
 
 def netoyage_CdProject(df,FICHIER_OUTPUT,hapikey,owner_selected):
@@ -238,6 +236,7 @@ def netoyage_CdProject(df,FICHIER_OUTPUT,hapikey,owner_selected):
     
     #Ajout last col (lead status)
     df_CDProject_tmp = df_CDProject_tmp.assign(leadStatus="NEW")
+    df_CDProject_tmp = add_refListing(df_CDProject_tmp,os.environ.get("name_fichier"),"CdProject")
 
     # EXPORT CSV
     df_CDProject_tmp.to_csv(FICHIER_OUTPUT,index=False,encoding='utf-8')
@@ -357,6 +356,18 @@ def netoyage_CdProject(df,FICHIER_OUTPUT,hapikey,owner_selected):
                 "propertyName": "hs_lead_status",
                 "idColumnType": None
             },
+                {
+                "columnObjectTypeId": "0-2",
+                "columnName": "Ref",
+                "propertyName": "ref",
+                "idColumnType": None
+            },
+                {
+                "columnObjectTypeId": "0-2",
+                "columnName": "Nom_listing",
+                "propertyName": "nom_du_listing",
+                "idColumnType": None
+            },
                 
                 
             ]
@@ -415,7 +426,7 @@ def netoyage_scraperIo(df,FICHIER_OUTPUT,hapikey,owner_selected):
         df_clean = assign_specified_owner(df_clean,owner_selected)    
     #Ajout last col (lead status)
     df_clean = df_clean.assign(leadStatus="NEW")
-    
+    df_clean = add_refListing(df_clean,os.environ.get("name_fichier"),"scrap.io")
 
     # EXPORT CSV
     df_clean.to_csv(FICHIER_OUTPUT,index=False,encoding='utf-8')
@@ -543,6 +554,18 @@ def netoyage_scraperIo(df,FICHIER_OUTPUT,hapikey,owner_selected):
                 "columnObjectTypeId": "0-2",
                 "columnName": "leadStatus",
                 "propertyName": "hs_lead_status",
+                "idColumnType": None
+            },
+                {
+                "columnObjectTypeId": "0-2",
+                "columnName": "Ref",
+                "propertyName": "ref",
+                "idColumnType": None
+            },
+                {
+                "columnObjectTypeId": "0-2",
+                "columnName": "Nom_listing",
+                "propertyName": "nom_du_listing",
                 "idColumnType": None
             },
                 

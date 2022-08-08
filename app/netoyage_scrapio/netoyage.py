@@ -5,24 +5,27 @@ import numpy as np
 
 def clean_TelInternational(input):
     if(not pd.isna(input) and input !='nan'):
-        sInit = str(int(input))
-        if(len(sInit) == 9):
-            #def comme fr par défaut
-            nb_pays = 2
-            s = sInit
-            s = ' '.join(s[i:i+2] for i in range(1, 9, 2))
-            final = "+33 "+sInit[0]+' '+s
-            
-            
-        else:
-            
-            ref_fr = 11 #2num après le +
-            nb_pays = len(sInit)-ref_fr+2
-            s = sInit[nb_pays+1:]
-            s = ' '.join(s[i:i+2] for i in range(0, len(s), 2))
-            final = "+"+sInit[0:nb_pays]+' '+sInit[nb_pays]+' '+s
-        return final
-
+        try:
+            sInit = str(int(input))
+            if(len(sInit) == 9):
+                #def comme fr par défaut
+                nb_pays = 2
+                s = sInit
+                s = ' '.join(s[i:i+2] for i in range(1, 9, 2))
+                final = "+33 "+sInit[0]+' '+s
+                
+                
+            else:
+                
+                ref_fr = 11 #2num après le +
+                nb_pays = len(sInit)-ref_fr+2
+                s = sInit[nb_pays+1:]
+                s = ' '.join(s[i:i+2] for i in range(0, len(s), 2))
+                final = "+"+sInit[0:nb_pays]+' '+sInit[nb_pays]+' '+s
+            return final
+        except :
+            print("error clean tel inter")
+            return "Nan"
     else:
         return "NaN"
     
