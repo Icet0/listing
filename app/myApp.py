@@ -10,7 +10,7 @@ import netoyage_scrapio.netoyage as nsrap
 import hubspot_api.requests as req
 import hubspot_api.insertion as insert
 import os
-from os import path
+from os import environ, path
 import google_sheet_api.sheet_api as sa
 
 
@@ -56,6 +56,8 @@ def main():
     os.environ['list_owner'] = str(list_owner)
     os.environ['FICHIER_INPUT'] = FICHIER_INPUT
     os.environ['owner_selected'] = owner_selected
+    os.environ["range_bot"] = "0" if os.environ.get("range_bot") == None else os.environ.get("range_bot")
+    os.environ["range_top"] = "100" #Par défaut de 0 à 100
     my_app()
     FICHIER_INPUT = os.environ.get("FICHIER_INPUT")
     owner_selected = os.environ.get("owner_selected")
@@ -72,15 +74,24 @@ def main():
     
     
     try:
-        df_csv = pd.read_csv (str(FICHIER_INPUT),encoding='latin-1', )
+        df_csv = pd.read_csv (str(FICHIER_INPUT),encoding='utf8', )
     except:
         try:
-            df_csv = pd.read_csv (str(FICHIER_INPUT),sep=";",encoding='latin-1')
+            df_csv = pd.read_csv (str(FICHIER_INPUT),sep=";",encoding='utf8')
         except:
             try:
                 df_csv = pd.read_csv (str(FICHIER_INPUT),sep="\t",encoding='utf8')
             except :
-                print('read_csv error : '+str("!"))
+                try:
+                    df_csv = pd.read_csv (str(FICHIER_INPUT),encoding='latin-1', )
+                except:
+                    try:
+                        df_csv = pd.read_csv (str(FICHIER_INPUT),sep=";",encoding='latin-1')
+                    except:
+                        try:
+                            df_csv = pd.read_csv (str(FICHIER_INPUT),sep="\t",encoding='latin-1')
+                        except :
+                            print('read_csv error : '+str("!"))
 
     print(df_csv.columns)
     df = pd.DataFrame(df_csv)
@@ -177,7 +188,8 @@ def netoyage_CdProject(df,FICHIER_OUTPUT,hapikey,owner_selected):
     df_CDProject_tmp = df_CDProject_tmp[df_CDProject_tmp['Nom'].notna()]
 
 
-
+    
+    
     #Clean tel 1
     df_CDProject_tmp = df_CDProject_tmp.rename(columns={"Téléphone 1":"Téléphone"})
 
@@ -211,6 +223,10 @@ def netoyage_CdProject(df,FICHIER_OUTPUT,hapikey,owner_selected):
     df_CDProject_tmp = df_CDProject_tmp.rename(columns={"Activité.1":"Activités secondaires"})
     df_CDProject_tmp = ncdp.netoyage_activites(df_CDProject_tmp)
 
+    #Unique EMail
+    df_CDProject_tmp = df_CDProject_tmp.assign(Unique_Email="")
+    df_CDProject_tmp["Unique_Email"] = df_CDProject_tmp.apply(lambda x: x["Email"].split(" ")[0],axis = 1)
+    
     #Netoyage global
     df_CDProject_tmp = ncdp.globalClean_CDProject(df_CDProject_tmp)
 
@@ -331,10 +347,17 @@ def netoyage_CdProject(df,FICHIER_OUTPUT,hapikey,owner_selected):
                 "propertyName": "secteurs_d_activite",
                 "idColumnType": None
             },
+                
                 {
                 "columnObjectTypeId": "0-2",
                 "columnName": "Type principal",
                 "propertyName": "activites_secondaire",
+                "idColumnType": None
+            },
+                {
+                "columnObjectTypeId": "0-2",
+                "columnName": "Unique_Email",
+                "propertyName": "email",
                 "idColumnType": None
             },
                 {
@@ -400,6 +423,10 @@ def netoyage_scraperIo(df,FICHIER_OUTPUT,hapikey,owner_selected):
     except KeyError:
             print("ERROR : "+str(ValueError))
             
+            
+    ## A GERER ##
+    df_clean = df_clean.iloc[os.environ.get("range_bot"):os.environ.get("range_top")] #Mettre un bouton pour gérer ça
+
     # RANDOM DATAFRAME
     df_clean = df_clean.sample(frac=1).reset_index(drop=True)
     
@@ -413,7 +440,7 @@ def netoyage_scraperIo(df,FICHIER_OUTPUT,hapikey,owner_selected):
 
     
     #Spr doublons
-    df_clean.drop_duplicates(subset =["Téléphone","Nom","Email"], keep = 'first', inplace=True)
+    df_clean.drop_duplicates(subset =["Téléphone","Nom"], keep = 'first', inplace=True)
     df_clean = df_clean[(df_clean['Téléphone'] != '' ) | (df_clean['Email'] !='') | (df_clean['Téléphone suplémentaire']!= '')
                    | (df_clean['Site internet (url racine)']!= '') | (df_clean['Page de contact 1']!= '')]
 
@@ -427,7 +454,6 @@ def netoyage_scraperIo(df,FICHIER_OUTPUT,hapikey,owner_selected):
     #Ajout last col (lead status)
     df_clean = df_clean.assign(leadStatus="NEW")
     df_clean = add_refListing(df_clean,os.environ.get("name_fichier"),"scrap.io")
-
     # EXPORT CSV
     df_clean.to_csv(FICHIER_OUTPUT,index=False,encoding='utf-8')
 
@@ -536,6 +562,12 @@ def netoyage_scraperIo(df,FICHIER_OUTPUT,hapikey,owner_selected):
                 "columnObjectTypeId": "0-2",
                 "columnName": "Lien_réseaux_sociaux",
                 "propertyName": "lien_reseaux_sociaux",
+                "idColumnType": None
+            },
+                {
+                "columnObjectTypeId": "0-2",
+                "columnName": "Unique_Email",
+                "propertyName": "email",
                 "idColumnType": None
             },
                 {

@@ -2,6 +2,7 @@ from argparse import Action
 from cgitb import text
 from faulthandler import disable
 from glob import glob
+from msilib.schema import Error
 from tkinter.filedialog import askopenfilename
 from tkinter import *
 from tkinter.messagebox import askokcancel
@@ -10,6 +11,7 @@ from tkinter.filedialog import *
 from tkinter.messagebox import showinfo
 from traitlets import default
 import os
+import pandas as pd
 
 from hubspot_api.requests import get_owner
 # from myApp import list_owner
@@ -38,6 +40,9 @@ def my_app():
     mon_fichier_cours = StringVar()
     ma_liste_owner = StringVar(value=list_owner)
     owner_selected_int = StringVar()
+    range_top = StringVar(value=os.environ.get("range_top"))
+    range_bot = StringVar(value=os.environ.get("range_bot"))
+
     def choisir_fichier():
         name_tmp = askopenfilename()   # lance la fenêtre
         print (name_tmp)
@@ -48,6 +53,42 @@ def my_app():
             mon_fichier_cours.set(name_tmp)
             os.environ['name_fichier']= mon_fichier_cours.get()
             changeState(b_running)
+            
+            #GET NB LIGNES 
+            df_csv = pd.DataFrame(None)
+            name_csv = name.get()
+            print(name_csv)
+            print(r"%s" %name_csv)
+            try:
+                df_csv = pd.read_csv (r"%s" %name_csv,encoding='latin-1', )
+            except :
+                try:
+                    df_csv = pd.read_csv (r"%s" %name_csv,sep=";",encoding='latin-1')
+                except :
+                    try:
+                        df_csv = pd.read_csv (r"%s" %name_csv,sep="\t",encoding='latin-1')
+                    except :
+                        try:
+                            df_csv = pd.read_csv (r"%s" %name_csv,encoding='utf8', )
+                        except :
+                            try:
+                                df_csv = pd.read_csv (r"%s" %name_csv,sep=";",encoding='utf8')
+                            except :
+                                try:
+                                    df_csv = pd.read_csv (r"%s" %name_csv,sep="\t",encoding='utf8')
+                                except :
+                                    print('read_csv error : '+str("!"))
+                                    choisir_fichier()
+
+            
+            df = pd.DataFrame(df_csv)
+            os.environ['range_top'] = str(len(df))
+            range_top.set(os.environ.get('range_top'))
+            
+            
+
+            #-------------
+            
         else:
             mon_fichier_cours.set("Mauvaise extention de fichier")
             
@@ -165,6 +206,8 @@ def my_app():
 
     Label(frm, text="Modifier la clef API",width=40).grid(column=2, row=1,ipadx=5,ipady=5,sticky=N)
     hapikey = StringVar(value=os.environ.get("hapikey"))
+    
+
 
     def estOK():
         print("hapikey get after inster :  "+hapikey.get())
@@ -183,8 +226,11 @@ def my_app():
     
     text = Entry(frm,textvariable = hapikey,validate='key',).grid(column=2,row=3,padx=15,pady=5)
     b_val = Button(frm,text="Valider",command=estOK).grid(column=2,row=4)
-    # text.insert('1.0',hapikey.get())
 
+    Label(frm, text="Modifier la taille du fichier à importer",width=40).grid(column=2, row=4,ipadx=5,ipady=5,sticky=N)
+    text_bot = Entry(frm,textvariable = range_bot,validate='key',).grid(column=2,row=5,padx=15,pady=5)
+    text_top = Entry(frm,textvariable = range_top,validate='key',).grid(column=3,row=5,padx=15,pady=5)
+    os.environ['range_bot']=range_bot.get()
 
 
 

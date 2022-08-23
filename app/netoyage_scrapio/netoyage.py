@@ -163,6 +163,10 @@ def netoyage_email(input):
     input["Email"] = input.apply(lambda x: x["Email"].replace(" nan",''),axis=1)
     input["Email"] = input.apply(lambda x: x["Email"].replace("nan",''),axis=1)
 
+    #Unique EMail
+    input = input.assign(Unique_Email="")
+    input["Unique_Email"] = input.apply(lambda x: x["Email"].split(" ")[0],axis = 1)
+    
     return input
 
 def netoyage_addr(input):
