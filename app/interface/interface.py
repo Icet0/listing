@@ -34,7 +34,7 @@ def my_app():
     FICHIER_INPUT = os.environ.get("FICHIER_INPUT")
     owner_selected = os.environ.get("owner_selected")
     fenetre = Tk()
-    fenetre.geometry("700x500")
+    fenetre.geometry("800x500")
 
     name = StringVar()
     mon_fichier_cours = StringVar()
@@ -224,13 +224,25 @@ def my_app():
         except :
             print("error get owner in interface")
     
-    text = Entry(frm,textvariable = hapikey,validate='key',).grid(column=2,row=3,padx=15,pady=5)
+    text = Entry(frm,textvariable = hapikey,validate='key',)
+    text.grid(column=2,row=3,padx=15,pady=5)
     b_val = Button(frm,text="Valider",command=estOK).grid(column=2,row=4)
 
+
+    def rangeOK():
+        print(text_top)
+        os.environ['range_top']=text_top.get()
+        print("range top get !!!!!!! : "+text_top.get())
+        os.environ['range_bot']=text_bot.get()
+
     Label(frm, text="Modifier la taille du fichier à importer",width=40).grid(column=2, row=4,ipadx=5,ipady=5,sticky=N)
-    text_bot = Entry(frm,textvariable = range_bot,validate='key',).grid(column=2,row=5,padx=15,pady=5)
-    text_top = Entry(frm,textvariable = range_top,validate='key',).grid(column=3,row=5,padx=15,pady=5)
-    os.environ['range_bot']=range_bot.get()
+    text_bot = Entry(frm,textvariable = range_bot)
+    text_bot.grid(column=2,row=5,padx=15,pady=5)
+    text_top = Entry(frm,textvariable = range_top)
+    text_top.grid(column=3,row=5,padx=15,pady=5)
+    b_valRange = Button(frm,text="Valider",command=rangeOK).grid(column=2,row=6)
+
+    
 
 
 

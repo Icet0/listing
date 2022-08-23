@@ -172,8 +172,10 @@ def assign_specified_owner(df_clean,owner):
     return req.assign_owner((df_clean.copy()).reset_index(drop=True),list_owner)
     
 def add_refListing(df,name_fichier,origine):
-    ref = sa.add_sheet(name_fichier,origine,len(df))
-    df = df.assign(Ref=ref)
+    # ref = sa.add_sheet(name_fichier,origine,len(df))
+    # df = df.assign(Ref=ref)
+    
+    df = df.assign(Ref="TRY")
     df = df.assign(Nom_listing=name_fichier)
     return df
 
@@ -424,12 +426,17 @@ def netoyage_scraperIo(df,FICHIER_OUTPUT,hapikey,owner_selected):
             print("ERROR : "+str(ValueError))
             
             
+    print("TAILLE AVANT : "+str(len(df_clean)))
+    print("RANGE : "+str(int(os.environ.get("range_bot")))+str(int(os.environ.get("range_top"))))
     ## A GERER ##
-    df_clean = df_clean.iloc[os.environ.get("range_bot"):os.environ.get("range_top")] #Mettre un bouton pour gérer ça
+    df_clean = df_clean.iloc[int(os.environ.get("range_bot")):int(os.environ.get("range_top"))] #Mettre un bouton pour gérer ça
+    # df_clean = df_clean.iloc[0:220]
+    print("TAILLE APRES : "+str(len(df_clean)))
 
     # RANDOM DATAFRAME
     df_clean = df_clean.sample(frac=1).reset_index(drop=True)
-    
+    print("TAILLE APRES après : "+str(len(df_clean)))
+
     #Spr des nan
     df_clean = df_clean.replace(np.nan,'')
     df_clean = df_clean.replace('nan','')
@@ -607,7 +614,7 @@ def netoyage_scraperIo(df,FICHIER_OUTPUT,hapikey,owner_selected):
     ]
     }
     # EXPORT HUBSPOT
-    insert.insertion_hubspot(FICHIER_OUTPUT,hapikey,data)
+    # insert.insertion_hubspot(FICHIER_OUTPUT,hapikey,data)
     
     
     
