@@ -2,7 +2,7 @@ from argparse import Action
 from cgitb import text
 from faulthandler import disable
 from glob import glob
-from msilib.schema import Error
+#from msilib.schema import Error
 from tkinter.filedialog import askopenfilename
 from tkinter import *
 from tkinter.messagebox import askokcancel
