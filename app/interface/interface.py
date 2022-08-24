@@ -52,7 +52,7 @@ def my_app():
         if('.csv' in name_tmp) or ('.CSV' in name_tmp):
             mon_fichier_cours.set(name_tmp)
             os.environ['name_fichier']= mon_fichier_cours.get()
-            changeState(b_running)
+            changeState(b_valRange)
             
             #GET NB LIGNES 
             df_csv = pd.DataFrame(None)
@@ -234,13 +234,15 @@ def my_app():
         os.environ['range_top']=text_top.get()
         print("range top get !!!!!!! : "+text_top.get())
         os.environ['range_bot']=text_bot.get()
+        changeState(b_running)
 
     Label(frm, text="Modifier la taille du fichier à importer",width=40).grid(column=2, row=4,ipadx=5,ipady=5,sticky=N)
     text_bot = Entry(frm,textvariable = range_bot)
     text_bot.grid(column=2,row=5,padx=15,pady=5)
     text_top = Entry(frm,textvariable = range_top)
     text_top.grid(column=3,row=5,padx=15,pady=5)
-    b_valRange = Button(frm,text="Valider",command=rangeOK).grid(column=2,row=6)
+    b_valRange = Button(frm,text="Valider",command=rangeOK,state=DISABLED)
+    b_valRange.grid(column=2,row=6)
 
     
 

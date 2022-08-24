@@ -172,10 +172,10 @@ def assign_specified_owner(df_clean,owner):
     return req.assign_owner((df_clean.copy()).reset_index(drop=True),list_owner)
     
 def add_refListing(df,name_fichier,origine):
-    # ref = sa.add_sheet(name_fichier,origine,len(df))
-    # df = df.assign(Ref=ref)
+    ref = sa.add_sheet(name_fichier,origine,len(df))
+    df = df.assign(Ref=ref)
     
-    df = df.assign(Ref="TRY")
+    # df = df.assign(Ref="TRY")
     df = df.assign(Nom_listing=name_fichier)
     return df
 
@@ -184,7 +184,7 @@ def add_refListing(df,name_fichier,origine):
 
 def netoyage_CdProject(df,FICHIER_OUTPUT,hapikey,owner_selected):
     df_CDProject_tmp = df.copy()
-    (df_CDProject_tmp.drop_duplicates(subset =["Téléphone 1","Nom","Email"], keep = 'first', inplace=True))
+    (df_CDProject_tmp.drop_duplicates(subset =["Téléphone 1","Nom"], keep = 'first', inplace=True))
     df_CDProject_tmp['Nom'] = df_CDProject_tmp.apply(lambda x: x['Nom'] if (not pd.isna(x['Email']) or (not pd.isna(x["Téléphone 2"]))
                                                             or (not pd.isna(x["Téléphone 1"]))) else np.nan, axis = 1)
     df_CDProject_tmp = df_CDProject_tmp[df_CDProject_tmp['Nom'].notna()]
@@ -227,10 +227,22 @@ def netoyage_CdProject(df,FICHIER_OUTPUT,hapikey,owner_selected):
 
     #Unique EMail
     df_CDProject_tmp = df_CDProject_tmp.assign(Unique_Email="")
-    df_CDProject_tmp["Unique_Email"] = df_CDProject_tmp.apply(lambda x: x["Email"].split(" ")[0],axis = 1)
+    df_CDProject_tmp["Unique_Email"] = df_CDProject_tmp.apply(lambda x: str(x["Email"]).split(" ")[0],axis = 1)
     
     #Netoyage global
     df_CDProject_tmp = ncdp.globalClean_CDProject(df_CDProject_tmp)
+
+    print("TAILLE AVANT : "+str(len(df_CDProject_tmp)))
+    print("RANGE : "+str(int(os.environ.get("range_bot")))+str(int(os.environ.get("range_top"))))
+    ## A GERER ##
+    df_CDProject_tmp = df_CDProject_tmp.iloc[int(os.environ.get("range_bot")):int(os.environ.get("range_top"))] #Mettre un bouton pour gérer ça
+    # df_clean = df_clean.iloc[0:220]
+    print("TAILLE APRES : "+str(len(df_CDProject_tmp)))
+
+    # RANDOM DATAFRAME
+    df_CDProject_tmp = df_CDProject_tmp.sample(frac=1).reset_index(drop=True)
+    print("TAILLE APRES après : "+str(len(df_CDProject_tmp)))
+
 
     #Spr des nan
     df_CDProject_tmp = df_CDProject_tmp.replace(np.nan,'')
@@ -254,6 +266,9 @@ def netoyage_CdProject(df,FICHIER_OUTPUT,hapikey,owner_selected):
     
     #Ajout last col (lead status)
     df_CDProject_tmp = df_CDProject_tmp.assign(leadStatus="NEW")
+    df_CDProject_tmp = df_CDProject_tmp.assign(id="NAN")
+    df_CDProject_tmp['id'] = df_CDProject_tmp['Nom']+df_CDProject_tmp['Téléphone']
+    print(df_CDProject_tmp['id'])
     df_CDProject_tmp = add_refListing(df_CDProject_tmp,os.environ.get("name_fichier"),"CdProject")
 
     # EXPORT CSV
@@ -381,6 +396,13 @@ def netoyage_CdProject(df,FICHIER_OUTPUT,hapikey,owner_selected):
                 "propertyName": "hs_lead_status",
                 "idColumnType": None
             },
+                #UNIQUE DOUBLONS
+                {
+                "columnObjectTypeId": "0-2",
+                "columnName": "id",
+                "propertyName": "id_unique",
+                "idColumnType": None
+            },
                 {
                 "columnObjectTypeId": "0-2",
                 "columnName": "Ref",
@@ -460,11 +482,15 @@ def netoyage_scraperIo(df,FICHIER_OUTPUT,hapikey,owner_selected):
         df_clean = assign_specified_owner(df_clean,owner_selected)    
     #Ajout last col (lead status)
     df_clean = df_clean.assign(leadStatus="NEW")
+    df_clean = df_clean.assign(id="NAN")
+    df_clean['id'] = df_clean['Nom']+df_clean['Téléphone']
+    print(df_clean['id'])
     df_clean = add_refListing(df_clean,os.environ.get("name_fichier"),"scrap.io")
     # EXPORT CSV
     df_clean.to_csv(FICHIER_OUTPUT,index=False,encoding='utf-8')
 
     print("TO CSV OK !!")
+    
     data = {
     "name": os.environ.get("name_fichier"),
     "files": [
@@ -595,6 +621,13 @@ def netoyage_scraperIo(df,FICHIER_OUTPUT,hapikey,owner_selected):
                 "propertyName": "hs_lead_status",
                 "idColumnType": None
             },
+                #UNIQUE DOUBLONS
+                {
+                "columnObjectTypeId": "0-2",
+                "columnName": "id",
+                "propertyName": "id_unique",
+                "idColumnType": None
+            },
                 {
                 "columnObjectTypeId": "0-2",
                 "columnName": "Ref",
@@ -614,7 +647,7 @@ def netoyage_scraperIo(df,FICHIER_OUTPUT,hapikey,owner_selected):
     ]
     }
     # EXPORT HUBSPOT
-    # insert.insertion_hubspot(FICHIER_OUTPUT,hapikey,data)
+    insert.insertion_hubspot(FICHIER_OUTPUT,hapikey,data)
     
     
     
