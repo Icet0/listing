@@ -77,10 +77,10 @@ def main():
         df_csv = pd.read_csv (str(FICHIER_INPUT),encoding='utf8', )
     except:
         try:
-            df_csv = pd.read_csv (str(FICHIER_INPUT),sep=";",encoding='utf8')
+            df_csv = pd.read_csv (str(FICHIER_INPUT),sep="\t",encoding='utf8')     
         except:
             try:
-                df_csv = pd.read_csv (str(FICHIER_INPUT),sep="\t",encoding='utf8')
+                df_csv = pd.read_csv (str(FICHIER_INPUT),sep=";",encoding='utf8')
             except :
                 try:
                     df_csv = pd.read_csv (str(FICHIER_INPUT),encoding='latin-1', )
