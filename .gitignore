@@ -8,4 +8,6 @@ ec.xls
 editeur logiciels.xls
 EDITEUR_LOGICIELS.csv
 EXPORT.csv
-
+env
+.env
+.vscode

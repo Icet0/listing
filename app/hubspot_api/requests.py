@@ -88,3 +88,38 @@ def assign_owner(df,list_owner):
         print('Error in assign_owner' + str("!"))
     # print(df['owner'])
     return df
+  
+def getBacklList(apikey,after=0): 
+    
+  url = "https://api.hubapi.com/crm/v3/objects/companies/search"
+  headers={
+      'Content-type':'application/json', 
+      'authorization': 'Bearer %s' %apikey
+
+  }
+  body = {
+      "filterGroups": [
+      {
+          "filters": [
+          {
+              "value": "true",
+              "propertyName": "blacklist",
+              "operator": "NEQ"
+          },
+          {
+              "value": "Dead",
+              "propertyName": "hs_lead_status",
+              "operator": "EQ"
+          },
+          ],
+
+      }
+      ],
+
+      "limit": 30,
+      "after": after
+  }
+  response = requests.request("POST", url,json=body,headers=headers)
+  # print("total cpnm = "+str(response.json()['total']))
+  return response.json()
+

@@ -669,10 +669,8 @@ def netoyage_manageo(df,FICHIER_OUTPUT,hapikey,owner_selected):
     # df_clean = add_refListing(df_clean,os.environ.get("name_fichier"),"scrap.io")
     # EXPORT CSV
     df_clean.to_csv(FICHIER_OUTPUT,index=False,encoding='utf-8')
-
-    print("TO CSV OK !!")
     
-    
+    #EXPORT HUBSPOT 
     data = {
     "name": os.environ.get("name_fichier"),
     "files": [
