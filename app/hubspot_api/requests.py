@@ -95,7 +95,6 @@ def getBacklList(apikey,after=0):
   headers={
       'Content-type':'application/json', 
       'authorization': 'Bearer %s' %apikey
-
   }
   body = {
       "filterGroups": [
@@ -104,7 +103,7 @@ def getBacklList(apikey,after=0):
           {
               "value": "true",
               "propertyName": "blacklist",
-              "operator": "NEQ"
+              "operator": "EQ"
           },
           {
               "value": "Dead",

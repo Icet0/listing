@@ -26,6 +26,13 @@ def test():
         "Site internet (url racine)":"https://facebook.com",
         "Téléphone":"0695342229",
 
+    },
+    {
+        "nom company":"Entreprise Test BlackList",
+        "Type principal":"Secteur A 3",
+        "Site internet (url racine)":"https://facebook.com",
+        "Téléphone":"999",
+
     }]
     
     myJson2 = [{

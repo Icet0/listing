@@ -14,6 +14,12 @@ import os
 from os import environ, path
 import google_sheet_api.sheet_api as sa
 
+import re
+# ! GERER L'IMPORT DE LA LIBRAIRIE UNIDECODE (et accéder a l'env)
+import unidecode
+import hubspot_api.requests as hs
+
+
 
 
 def main():
@@ -880,9 +886,42 @@ def netoyage_manageo(df,FICHIER_OUTPUT,hapikey,owner_selected):
     insert.insertion_hubspot(FICHIER_OUTPUT,hapikey,data_contact)
 
 
-    
-    
-    
+
+def myBacklList(apikey):
+    myrep = hs.getBacklList(apikey)
+    print("total cpnm = "+str(myrep['total']))
+    blackList = []
+    try:
+        while myrep.get('paging'):
+            print("after = "+str(myrep['paging']['next']['after']))
+            after = myrep['paging']['next']['after']
+            for i in myrep['results']:
+                blackList.append(i) #AGERER ICI
+            myrep = hs.getBacklList(apikey,after)
+        else:
+            for i in myrep['results']:
+                blackList.append(i)
+    except Exception as e:
+        print("end of list ",e)
+    return blackList
+
+
+def removeBlackList(df,apikey):
+    blackList = myBacklList(apikey)
+    df['name_normalized'] = df['Nom'].apply(lambda x: unidecode.unidecode(re.sub(r'[^\w\s_]', '', x.lower()).replace(' ', '').replace('_','')))
+    print(df['name_normalized'])
+    # Créer une liste contenant les noms normalisés de la blacklist
+    blacklist_names = [unidecode.unidecode(re.sub(r'[^\w\s_]', '', item['properties']['name'].lower()).replace(' ', '').replace('_','')) for item in blackList]
+
+    print(blacklist_names)
+    # Sélectionner les lignes du dataframe qui ont une valeur dans la colonne "name_normalized" qui est dans la liste de la blacklist
+    df_filtered = df[~df['name_normalized'].isin(blacklist_names)]
+
+    # Supprimer la colonne "name_normalized" du dataframe final
+    df_filtered = df_filtered.drop(columns=['name_normalized'])
+
+    print(df_filtered)
+    return df_filtered
     
 if __name__ == "__main__":
     print("Lancement du programme . . . ")
