@@ -101,34 +101,6 @@ def netoyage_pageLienRS(input):
 
 
 
-# def netoyage_email(input):
-#     input["Email"] = input.apply(lambda x : x["Email"] +' '+ x["Email 2"] 
-#                                                          if not pd.isna(x["Email"])  and not pd.isna(x["Email 2"]) and x["Email 2"] not in x["Email"]
-#                                                          else x["Email"] if not pd.isna(x["Email"])
-#                                                                                                    else x["Email 2"]
-#                                                                                                          if (not pd.isna(x["Email 2"]))
-#                                                                                                          else np.nan,axis=1)
-                                                
-#     input["Email"] = input.apply(lambda x : x["Email"] +' '+ x["Email 3"] 
-#                                                          if not pd.isna(x["Email 3"]) and x["Email 3"] not in x["Email"]
-#                                                          else x["Email"]
-#                                                             if not pd.isna(x['Email'])
-#                                                             else np.nan,axis=1)
-    
-#     input["Email"] = input.apply(lambda x : x["Email"] +' '+ x["Email 4"] 
-#                                                          if not pd.isna(x["Email 4"]) and x["Email 4"] not in x["Email"]
-#                                                          else x["Email"]
-#                                                             if not pd.isna(x['Email'])
-#                                                             else np.nan,axis=1)
-    
-#     input["Email"] = input.apply(lambda x : x["Email"] +' '+ x["Email 5"] 
-#                                                          if not pd.isna(x["Email 5"]) and x["Email 5"] not in x["Email"]
-#                                                          else x["Email"]
-#                                                             if not pd.isna(x['Email'])
-#                                                             else np.nan,axis=1)
-    
-#     return input
-
 def netoyage_email(input):
     mail_ban = ['prenom.nom@domaine.com','mail@mail.com']
 

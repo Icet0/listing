@@ -77,6 +77,14 @@ def format_phone(phone):
     else:
         return phone
     
+def getAnneeCreation(date):
+    if(len(date)> 0):
+        date = str(date)
+        date = date.split("/")
+        return date[-1]
+    else:
+        return date
+    
     
     
     

@@ -7,7 +7,7 @@ import netoyage_CDProject.netoyage_cdp as ncdp
 from hubspot_api.requests import owner
 from interface.interface import my_app
 import netoyage_scrapio.netoyage as nsrap
-import netoyage_manageo.netoyage_mng as nmng
+import netoyage_manageo.netoyage_mng as mng
 import hubspot_api.requests as req
 import hubspot_api.insertion as insert
 import os
@@ -15,7 +15,6 @@ from os import environ, path
 import google_sheet_api.sheet_api as sa
 
 import re
-# ! GERER L'IMPORT DE LA LIBRAIRIE UNIDECODE (et accéder a l'env)
 import unidecode
 import hubspot_api.requests as hs
 
@@ -453,6 +452,8 @@ def netoyage_scraperIo(df,FICHIER_OUTPUT,hapikey,owner_selected):
     df_addrClean = nsrap.netoyage_addr(df_EmailClean)
     df_zipClean = nsrap.netoyage_codeZip(df_addrClean)
     df_clean = df_zipClean
+    # BLACLIST
+    df_clean = removeBlackList(df_clean,apikey=hapikey)
     
     try:
         df_clean = nsrap.globalClean(df_clean)
@@ -662,19 +663,49 @@ def netoyage_scraperIo(df,FICHIER_OUTPUT,hapikey,owner_selected):
     insert.insertion_hubspot(FICHIER_OUTPUT,hapikey,data)
     
 def netoyage_manageo(df,FICHIER_OUTPUT,hapikey,owner_selected):
-    df_clean,dfc = nmng.test()
-    if(owner_selected=="random"):
-        df_clean = assign_random_owner(hapikey,df_clean)
-    else:
-        df_clean = assign_specified_owner(df_clean,owner_selected)    
+    df_comp,dfc = mng.test()
+    df_comp = removeBlackList(df_comp,apikey=hapikey)
+
+
+            
+    #DF COMP NETOYAGE
+    df_comp['Téléphone'] = df_comp['Téléphone'].apply(mng.format_phone)
+    df_comp['Date de création'] = df_comp['Date de création'].apply(mng.getAnneeCreation)
+    df_comp = df_comp.assign(responsable="NAN")
+    df_comp = df_comp.replace(np.nan,'')
+    df_comp = df_comp.replace('nan','')
+    df_comp = df_comp.replace('NaN','')
+    df_comp['responsable'] = df_comp['Nom dirigeant principal'].astype(str) +" "+ df_comp["Prénom dirigeant principal"]
+    df_comp = df_comp.drop(['Nom dirigeant principal','Prénom dirigeant principal'],axis=1)     
+    # ----------------- #
+    
+    #DFC NETOYAGE
+    dfc['Téléphone'] = dfc['Téléphone'].apply(mng.format_phone)
+    dfc = dfc.replace(np.nan,'')
+    dfc = dfc.replace('nan','')
+    dfc = dfc.replace('NaN','')
+    # ----------------- #
+    
+    
     #Ajout last col (lead status)
-    df_clean = df_clean.assign(leadStatus="NEW")
-    df_clean = df_clean.assign(id="NAN")
-    df_clean['id'] = df_clean['nom company']+df_clean['Téléphone']
-    print(df_clean['id'])
+    if(owner_selected=="random"):
+        df_comp = assign_random_owner(hapikey,df_comp)
+    else:
+        df_comp = assign_specified_owner(df_comp,owner_selected)
+        dfc = assign_specified_owner(dfc,owner_selected)
+        
+    df_comp = df_comp.assign(leadStatus="NEW")
+    dfc = dfc.assign(leadStatus="NEW")
+
+    df_comp = df_comp.assign(id="NAN")
+    df_comp['id'] = df_comp['Raison sociale']+df_comp['Téléphone']
+    print(df_comp['id'])
     # df_clean = add_refListing(df_clean,os.environ.get("name_fichier"),"scrap.io")
     # EXPORT CSV
-    df_clean.to_csv(FICHIER_OUTPUT,index=False,encoding='utf-8')
+    df_comp.to_csv(FICHIER_OUTPUT,index=False,encoding='utf-8')
+        
+            
+    
     
     #EXPORT HUBSPOT 
     data = {
