@@ -200,7 +200,8 @@ def netoyage_CdProject(df,FICHIER_OUTPUT,hapikey,owner_selected):
                                                             or (not pd.isna(x["Téléphone 1"]))) else np.nan, axis = 1)
     df_CDProject_tmp = df_CDProject_tmp[df_CDProject_tmp['Nom'].notna()]
 
-
+    ##BLACK LIST
+    df_CDProject_tmp = removeBlackList(df_CDProject_tmp,hapikey)
     
     
     #Clean tel 1
@@ -662,7 +663,13 @@ def netoyage_scraperIo(df,FICHIER_OUTPUT,hapikey,owner_selected):
     # EXPORT HUBSPOT
     insert.insertion_hubspot(FICHIER_OUTPUT,hapikey,data)
     
-def netoyage_manageo(df,FICHIER_OUTPUT,hapikey,owner_selected):
+def netoyage_manageo(df,FICHIER_OUTPUT,hapikey,owner_selected,df_contact=None):
+    #NETOYAGE MANAGEO selection des colonnes
+    manageoDF = pd.DataFrame(df,columns=['Siret','Raison sociale', 'Adresse normée ligne 4', 'Ville', 'Code postal', 'Libellé activité','Code activité', 'Date de création',
+                                            'Tranche Effectif INSEE','Téléphone', 'Email', "Chiffre d'affaires" , 'Nom dirigeant principal', 'Prénom dirigeant principal'])
+    if(df_contact is not None):
+        manageoDFC = pd.DataFrame(df_contact,columns=['Civilité','Nom', 'Prénom', 'Fonction', 'Raison sociale', 'Téléphone','Email'])
+
     df_comp,dfc = mng.test()
     df_comp = removeBlackList(df_comp,apikey=hapikey)
 
@@ -677,14 +684,16 @@ def netoyage_manageo(df,FICHIER_OUTPUT,hapikey,owner_selected):
     df_comp = df_comp.replace('NaN','')
     df_comp['responsable'] = df_comp['Nom dirigeant principal'].astype(str) +" "+ df_comp["Prénom dirigeant principal"]
     df_comp = df_comp.drop(['Nom dirigeant principal','Prénom dirigeant principal'],axis=1)     
+    df_comp.rename(columns={'Adresse normée ligne 4':'adresse'}, inplace=True)
     # ----------------- #
     
-    #DFC NETOYAGE
-    dfc['Téléphone'] = dfc['Téléphone'].apply(mng.format_phone)
-    dfc = dfc.replace(np.nan,'')
-    dfc = dfc.replace('nan','')
-    dfc = dfc.replace('NaN','')
-    # ----------------- #
+    if(dfc is not None):
+        #DFC NETOYAGE
+        dfc['Téléphone'] = dfc['Téléphone'].apply(mng.format_phone)
+        dfc = dfc.replace(np.nan,'')
+        dfc = dfc.replace('nan','')
+        dfc = dfc.replace('NaN','')
+        # ----------------- #
     
     
     #Ajout last col (lead status)
@@ -692,15 +701,17 @@ def netoyage_manageo(df,FICHIER_OUTPUT,hapikey,owner_selected):
         df_comp = assign_random_owner(hapikey,df_comp)
     else:
         df_comp = assign_specified_owner(df_comp,owner_selected)
-        dfc = assign_specified_owner(dfc,owner_selected)
+        if(dfc is not None):
+            dfc = assign_specified_owner(dfc,owner_selected)
         
     df_comp = df_comp.assign(leadStatus="NEW")
-    dfc = dfc.assign(leadStatus="NEW")
+    if(dfc is not None):
+        dfc = dfc.assign(leadStatus="NEW")
 
     df_comp = df_comp.assign(id="NAN")
     df_comp['id'] = df_comp['Raison sociale']+df_comp['Téléphone']
     print(df_comp['id'])
-    # df_clean = add_refListing(df_clean,os.environ.get("name_fichier"),"scrap.io")
+    df_clean = add_refListing(df_clean,os.environ.get("name_fichier"),"manageo")
     # EXPORT CSV
     df_comp.to_csv(FICHIER_OUTPUT,index=False,encoding='utf-8')
         
@@ -720,20 +731,56 @@ def netoyage_manageo(df,FICHIER_OUTPUT,hapikey,owner_selected):
             "columnMappings": [
             {
                 "columnObjectTypeId": "0-2",
-                "columnName": "nom company",
+                "columnName": "Siret",
+                "propertyName": "siret",
+                "idColumnType": None
+            },
+            {
+                "columnObjectTypeId": "0-2",
+                "columnName": "Raison sociale",
                 "propertyName": "name",
                 "idColumnType": None
             },
             {
                 "columnObjectTypeId": "0-2",
-                "columnName": "Type principal",
+                "columnName": "adresse",
+                "propertyName": "address",
+                "idColumnType": None
+            },
+            {
+                "columnObjectTypeId": "0-2",
+                "columnName": "Ville",
+                "propertyName": "city",
+                "idColumnType": None
+            },
+            {
+                "columnObjectTypeId": "0-2",
+                "columnName": "Code postal",
+                "propertyName": "zip",
+                "idColumnType": None
+            },
+            {
+                "columnObjectTypeId": "0-2",
+                "columnName": "Libellé activité",
                 "propertyName": "secteurs_d_activite",
                 "idColumnType": None
             },
             {
                 "columnObjectTypeId": "0-2",
-                "columnName": "Site internet (url racine)",
-                "propertyName": "website",
+                "columnName": "Code activité",
+                "propertyName": "code_activite",
+                "idColumnType": None
+            },
+            {
+                "columnObjectTypeId": "0-2",
+                "columnName": "Date de création",
+                "propertyName": "founded_year",
+                "idColumnType": None
+            },
+            {
+                "columnObjectTypeId": "0-2",
+                "columnName": "Tranche Effectif INSEE",
+                "propertyName": "effectif",
                 "idColumnType": None
             },
             {
@@ -742,90 +789,18 @@ def netoyage_manageo(df,FICHIER_OUTPUT,hapikey,owner_selected):
                 "propertyName": "phone",
                 "idColumnType": None
             },
-            # {
-            #     "columnObjectTypeId": "0-1",
-            #     "columnName": "Nom contact",
-            #     "propertyName": "lastname",
-            #     "idColumnType": None
-            # },
-            # {
-            #     "columnObjectTypeId": "0-1",
-            #     "columnName": "Prenom contact",
-            #     "propertyName": "firstname",
-            #     "idColumnType": None
-            # },
-            
-            
-            
-            
-            
-            
-    #             {
-    #             "columnObjectTypeId": "0-2",
-    #             "columnName": "Téléphone suplémentaire",
-    #             "propertyName": "telephones",
-    #             "idColumnType": None
-    #         },
-    #             {
-    #             "columnObjectTypeId": "0-2",
-    #             "columnName": "Fuseau horaire",
-    #             "propertyName": "timezone",
-    #             "idColumnType": None
-    #         },
-    #             {
-    #             "columnObjectTypeId": "0-2",
-    #             "columnName": "Adresse 1",
-    #             "propertyName": "address",
-    #             "idColumnType": None
-    #         },
-    #             {
-    #             "columnObjectTypeId": "0-2",
-    #             "columnName": "Ville",
-    #             "propertyName": "city",
-    #             "idColumnType": None
-    #         },
-    #             {
-    #             "columnObjectTypeId": "0-2",
-    #             "columnName": "Code postal",
-    #             "propertyName": "zip",
-    #             "idColumnType": None
-    #         },
-    #             {
-    #             "columnObjectTypeId": "0-2",
-    #             "columnName": "Etat",
-    #             "propertyName": "state",
-    #             "idColumnType": None
-    #         },
-    # #             {
-    # #             "columnObjectTypeId": "0-2",
-    # #             "columnName": "Division de niveau 2",
-    # #             "propertyName": "Division_de_niveau_2",
-    # #             "idColumnType": None
-    # #           },
-    #             {
-    #             "columnObjectTypeId": "0-2",
-    #             "columnName": "Pays",
-    #             "propertyName": "country",
-    #             "idColumnType": None
-    #         },
-    #             {
-    #             "columnObjectTypeId": "0-2",
-    #             "columnName": "Email",
-    #             "propertyName": "emails",
-    #             "idColumnType": None
-    #         },
-    #             {
-    #             "columnObjectTypeId": "0-2",
-    #             "columnName": "Page de contact 1",
-    #             "propertyName": "pages_de_contacts",
-    #             "idColumnType": None
-    #         },
-    #             {
-    #             "columnObjectTypeId": "0-2",
-    #             "columnName": "Lien_réseaux_sociaux",
-    #             "propertyName": "lien_reseaux_sociaux",
-    #             "idColumnType": None
-    #         },
+            {
+                "columnObjectTypeId": "0-2",
+                "columnName": "Email",
+                "propertyName": "emails",
+                "idColumnType": None
+            },
+            {
+                "columnObjectTypeId": "0-2",
+                "columnName": "Ville",
+                "propertyName": "city",
+                "idColumnType": None
+            },
     #             {
     #             "columnObjectTypeId": "0-2",
     #             "columnName": "Unique_Email",
@@ -879,42 +854,43 @@ def netoyage_manageo(df,FICHIER_OUTPUT,hapikey,owner_selected):
     }
     # EXPORT HUBSPOT
     insert.insertion_hubspot(FICHIER_OUTPUT,hapikey,data)
-    dfc.to_csv(FICHIER_OUTPUT,index=False,encoding='utf-8')
-    data_contact = {
-        "name": os.environ.get("name_fichier")+"contacts",
-        "files": [
-            {
-            "fileName": "output_bundle.csv",
-            "fileFormat": "CSV",
-            "dateFormat": "DAY_MONTH_YEAR",
-            "fileImportPage": {
-                "hasHeader": True,
-                "columnMappings": [
-                    {
-                        "columnObjectTypeId": "0-2",
-                        "columnName": "company",
-                        "propertyName": "name",
-                        "idColumnType": None
-                    },
-                    {
-                        "columnObjectTypeId": "0-1",
-                        "columnName": "Nom contact",
-                        "propertyName": "lastname",
-                        "idColumnType": None
-                    },
-                    {
-                        "columnObjectTypeId": "0-1",
-                        "columnName": "Prenom contact",
-                        "propertyName": "firstname",
-                        "idColumnType": None
-                    },
-                ]
+    if(dfc is not None):
+        dfc.to_csv(FICHIER_OUTPUT,index=False,encoding='utf-8')
+        data_contact = {
+            "name": os.environ.get("name_fichier")+"contacts",
+            "files": [
+                {
+                "fileName": "output_bundle.csv",
+                "fileFormat": "CSV",
+                "dateFormat": "DAY_MONTH_YEAR",
+                "fileImportPage": {
+                    "hasHeader": True,
+                    "columnMappings": [
+                        {
+                            "columnObjectTypeId": "0-2",
+                            "columnName": "company",
+                            "propertyName": "name",
+                            "idColumnType": None
+                        },
+                        {
+                            "columnObjectTypeId": "0-1",
+                            "columnName": "Nom contact",
+                            "propertyName": "lastname",
+                            "idColumnType": None
+                        },
+                        {
+                            "columnObjectTypeId": "0-1",
+                            "columnName": "Prenom contact",
+                            "propertyName": "firstname",
+                            "idColumnType": None
+                        },
+                    ]
+                }
             }
+        ]
         }
-    ]
-    }
-    wait = input("Appuyez sur une touche pour continuer . . . ")
-    insert.insertion_hubspot(FICHIER_OUTPUT,hapikey,data_contact)
+        wait = input("Appuyez sur une touche pour continuer . . . ")
+        insert.insertion_hubspot(FICHIER_OUTPUT,hapikey,data_contact)
 
 
 
@@ -946,13 +922,16 @@ def removeBlackList(df,apikey):
 
     print(blacklist_names)
     # Sélectionner les lignes du dataframe qui ont une valeur dans la colonne "name_normalized" qui est dans la liste de la blacklist
-    df_filtered = df[~df['name_normalized'].isin(blacklist_names)]
-
+    # df_filtered = df[~df['name_normalized'].isin(blacklist_names)]
+    
+    # Sélectionner les lignes du DataFrame qui ont une valeur dans la colonne "name_normalized"
+    # qui contient une chaîne de caractères de la liste de la blacklist
+    df_filtered = df[df['name_normalized'].str.contains('|'.join(blacklist_names))]
+    
     # Supprimer la colonne "name_normalized" du dataframe final
-    df_filtered = df_filtered.drop(columns=['name_normalized'])
+    df = df.drop(df_filtered.index)
 
-    print(df_filtered)
-    return df_filtered
+    return df
     
 if __name__ == "__main__":
     print("Lancement du programme . . . ")

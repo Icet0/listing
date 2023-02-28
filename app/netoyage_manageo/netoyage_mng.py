@@ -55,6 +55,18 @@ def test():
 
 #FUNCTION TO CLEAN THE DATA
 
+def netoyage_email(input):
+    mail_ban = ['prenom.nom@domaine.com','mail@mail.com']
+
+      #Suppression des doublons
+    input["Email"] = input["Email"].replace(" nan",'')
+    input["Email"] = input["Email"].replace("nan",'')
+    input["Email"] = input["Email"].fillna("")
+    #Unique EMail
+    input = input.assign(Unique_Email="")
+    input["Unique_Email"] = input.apply(lambda x: x["Email"].split(" ")[0],axis = 1)
+    
+    return input
 
 def is_nan(x):
     return math.isnan(x)
