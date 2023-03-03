@@ -42,6 +42,14 @@ def my_app():
     owner_selected_int = StringVar()
     range_top = StringVar(value=os.environ.get("range_top"))
     range_bot = StringVar(value=os.environ.get("range_bot"))
+    # ? For manageo contact
+    os.environ['manageo'] = 'False'
+    name_contact = StringVar()
+    mon_fichier_cours_contact = StringVar()
+    manageo = False
+    range_bot_mngC = StringVar(value=os.environ.get("range_bot_mngC"))
+    range_top_mngC = StringVar(value=os.environ.get("range_top_mngC"))
+    # ? ------------------
 
     def choisir_fichier():
         name_tmp = askopenfilename()   # lance la fenêtre
@@ -190,10 +198,173 @@ def my_app():
         fenetre.destroy()
 
 
+
+
+
+    
+    def selectManageo():
+        def choisir_fichier_cmp_mng():
+            name_tmp = askopenfilename()   # lance la fenêtre
+            print (name_tmp)
+            name.set(name_tmp)
+            name_tmp = name
+            name_tmp = name_tmp.get().split('/')[-1]
+            if('.csv' in name_tmp) or ('.CSV' in name_tmp):
+                mon_fichier_cours.set(name_tmp)
+                os.environ['name_fichier']= mon_fichier_cours.get()
+                
+                #GET NB LIGNES 
+                df_csv = pd.DataFrame(None)
+                name_csv = name.get()
+                print(name_csv)
+                print(r"%s" %name_csv)
+                try:
+                    df_csv = pd.read_csv (r"%s" %name_csv,encoding='latin-1', )
+                except :
+                    try:
+                        df_csv = pd.read_csv (r"%s" %name_csv,sep=";",encoding='latin-1')
+                    except :
+                        try:
+                            df_csv = pd.read_csv (r"%s" %name_csv,sep="\t",encoding='latin-1')
+                        except :
+                            try:
+                                df_csv = pd.read_csv (r"%s" %name_csv,encoding='utf8', )
+                            except :
+                                try:
+                                    df_csv = pd.read_csv (r"%s" %name_csv,sep=";",encoding='utf8')
+                                except :
+                                    try:
+                                        df_csv = pd.read_csv (r"%s" %name_csv,sep="\t",encoding='utf8')
+                                    except :
+                                        print('read_csv error : '+str("!"))
+                                        choisir_fichier_cmp_mng()
+
+                changeState(b_valider_mng)
+                df = pd.DataFrame(df_csv)
+                os.environ['range_top'] = str(len(df))
+                range_top.set(os.environ.get('range_top'))
+                
+                
+
+                #-------------
+                
+            else:
+                mon_fichier_cours.set("Mauvaise extention de fichier")
+        def choisir_fichier_cont_mng():
+            name_tmp = askopenfilename()   # lance la fenêtre
+            print (name_tmp)
+            name_contact.set(name_tmp)
+            name_tmp = name_contact
+            name_tmp = name_tmp.get().split('/')[-1]
+            if('.csv' in name_tmp) or ('.CSV' in name_tmp):
+                mon_fichier_cours_contact.set(name_tmp)
+                os.environ['name_fichier_contact'] = mon_fichier_cours_contact.get()
+                
+                #GET NB LIGNES 
+                df_csv = pd.DataFrame(None)
+                name_csv = name_contact.get()
+                print(name_csv)
+                print(r"%s" %name_csv)
+                try:
+                    df_csv = pd.read_csv (r"%s" %name_csv,encoding='latin-1', )
+                except :
+                    try:
+                        df_csv = pd.read_csv (r"%s" %name_csv,sep=";",encoding='latin-1')
+                    except :
+                        try:
+                            df_csv = pd.read_csv (r"%s" %name_csv,sep="\t",encoding='latin-1')
+                        except :
+                            try:
+                                df_csv = pd.read_csv (r"%s" %name_csv,encoding='utf8', )
+                            except :
+                                try:
+                                    df_csv = pd.read_csv (r"%s" %name_csv,sep=";",encoding='utf8')
+                                except :
+                                    try:
+                                        df_csv = pd.read_csv (r"%s" %name_csv,sep="\t",encoding='utf8')
+                                    except :
+                                        print('read_csv error : '+str("!"))
+                                        choisir_fichier_cont_mng()
+
+                
+                df = pd.DataFrame(df_csv)
+                os.environ['range_top_mngC'] = str(len(df))
+                range_top_mngC.set(os.environ.get('range_top_mngC'))
+
+                #-------------
+                
+            else:
+                mon_fichier_cours_contact.set("Mauvaise extention de fichier")
+        
+        def valider_mng():
+            FICHIER_INPUT = name.get()
+            FICHIER_INPUT_CONTACT = name_contact.get()
+            owner_selected = owner_selected_int
+            os.environ["FICHIER_INPUT"] = FICHIER_INPUT
+            os.environ["FICHIER_INPUT_CONTACT"] = FICHIER_INPUT_CONTACT
+            if(FICHIER_INPUT_CONTACT):
+                myLab_contact_range.grid(column=2, row=7,ipadx=5,ipady=5,sticky=N)
+                text_bot_contact.grid(column=2,row=8,padx=15,pady=5)
+                text_top_contact.grid(column=3,row=8,padx=15,pady=5)
+                b_valRange_contact.grid(column=2,row=9)
+                changeState(b_valRange_contact)
+                rangeOK_Contact()
+            os.environ['manageo'] = 'True'
+                
+            changeState(b_valRange)
+            win.destroy()
+            
+        def rangeOK_Contact():
+            print(text_top_contact)
+            os.environ['range_bot_mngC']=text_top_contact.get()
+            print("range top contact mng get !!!!!!! : "+text_top_contact.get())
+            os.environ['range_top_mngC']=text_bot_contact.get()
+            # changeState(b_running)
+                   
+        manageo = True
+        win = Toplevel(frm)
+      
+        # A Label widget to show in toplevel
+        Label(win,
+            text ="Choisir les fichiers d'import pour manageo").grid(row=0,column=0)   
+        
+        Label(win, text="Choisissez un csv de compagnie à importer",width=40).grid(column=2, row=0,ipadx=5,ipady=5,sticky=N)
+        comp_choix = Button(win, text="Choisir fichier compagnie", width=20, command=choisir_fichier_cmp_mng).grid(column=2,row=3,padx=5,pady=5)
+        Label(win, text="Choisissez un csv de contact à importer",width=40).grid(column=2, row=5,ipadx=5,ipady=5,sticky=N)
+        cont_choix = Button(win, text="Choisir fichier contacts", width=20, command=choisir_fichier_cont_mng).grid(column=2,row=7,padx=5,pady=5)
+        
+        
+        b_valider_mng = Button(win, text="Valider",width=20, command=valider_mng, state=DISABLED)
+        b_valider_mng.grid(column=1, row=10,padx=5,pady=5)
+        Label(win,textvariable=mon_fichier_cours).grid(column=0,row=3)
+        Label(win,textvariable=mon_fichier_cours_contact).grid(column=0,row=7)
+        
+        
+        # ? Sur la fenetre principale
+        Label(frm,textvariable=mon_fichier_cours_contact).grid(column=1,row=3)
+        
+        myLab_contact_range = Label(frm, text="Modifier la taille du fichier contact à importer",width=40)
+        text_bot_contact = Entry(frm,textvariable = range_bot_mngC)
+        text_top_contact = Entry(frm,textvariable = range_top_mngC)
+        b_valRange_contact = Button(frm,text="Valider",command=rangeOK_Contact,state=DISABLED)
+        
+        
+        #! on vire b_choix
+        disableState(b_choix)
+        b_choix.grid_remove()
+        
+
+
     frm = Frame(fenetre,padx=10,pady=10,)
     frm.grid(column=5,row=5)
+        
+    # * Manageo 
+    b_mng = Button(frm, text="MANAGEO", width=20, command=selectManageo).grid(column=1,row=2,padx=5,pady=5)
+    # -----------------
+    
     Label(frm, text="Choisissez un csv à importer",width=40).grid(column=1, row=0,ipadx=5,ipady=5,sticky=N)
-    b_choix = Button(frm, text="Choisir fichier", width=20, command=choisir_fichier).grid(column=1,row=3,padx=5,pady=5)
+    b_choix = Button(frm, text="Choisir fichier", width=20, command=choisir_fichier, state=NORMAL)
+    b_choix.grid(column=1,row=3,padx=5,pady=5)
     Label(frm,textvariable=mon_fichier_cours).grid(column=1,row=4)
     b_running = Button(frm, text="Running",width=20, command=openNewWindow,state=DISABLED)
     b_running.grid(column=1, row=5,)
@@ -235,8 +406,9 @@ def my_app():
         print("range top get !!!!!!! : "+text_top.get())
         os.environ['range_bot']=text_bot.get()
         changeState(b_running)
+        
 
-    Label(frm, text="Modifier la taille du fichier à importer",width=40).grid(column=2, row=4,ipadx=5,ipady=5,sticky=N)
+    Label(frm, text="Modifier la taille du fichier compagnie à importer",width=40).grid(column=2, row=4,ipadx=5,ipady=5,sticky=N)
     text_bot = Entry(frm,textvariable = range_bot)
     text_bot.grid(column=2,row=5,padx=15,pady=5)
     text_top = Entry(frm,textvariable = range_top)

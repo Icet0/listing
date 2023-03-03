@@ -32,17 +32,14 @@ def main():
     path_to_dat = path.join(path_to_dat,"output_bundle.csv")
 
     print(path_to_dat)
-    # try:
-    #     from PyInstaller.utils.hooks import collect_data_files
-    #     collect_data_files(package=path_to_dat)
-    #     print("Exec à partir du .exe")
-    # except ModuleNotFoundError as error:
-    #     print("Exec à partir du .py : "+str(error))
+
     
     FICHIER_OUTPUT = path_to_dat    
     # FICHIER_INPUT = "../EDITEUR_LOGICIELS.CSV"
     # FICHIER_INPUT = "../agence-de-voyage-paca.csv"
     FICHIER_INPUT=''
+    FICHIER_INPUT_CONTACT=''
+
     list_owner = []
     owner_selected = ""
     
@@ -65,14 +62,20 @@ def main():
     os.environ["range_bot"] = "0" if os.environ.get("range_bot") == None else os.environ.get("range_bot")
     os.environ["range_top"] = "100" #Par défaut de 0 à 100
     
+    # ? For manageo contact
+    os.environ['FICHIER_INPUT_CONTACT'] = FICHIER_INPUT_CONTACT
+    os.environ["range_bot_mngC"] = "0" if os.environ.get("range_bot_mngC") == None else os.environ.get("range_bot_mngC")
+    os.environ["range_top_mngC"] = "100" #Par défaut de 0 à 100
+    # ? -----------------
+    
     my_app()
     
     
     FICHIER_INPUT = os.environ.get("FICHIER_INPUT")
     owner_selected = os.environ.get("owner_selected")
     hapikey = os.environ.get("hapikey")
-    name_fichier = os.environ.get("name_fichier")
-
+    # name_fichier = os.environ.get("name_fichier")
+    FICHIER_INPUT_CONTACT = os.environ.get('FICHIER_INPUT_CONTACT') #Manageo contact if exist
 
     print("Fichier input after : "+FICHIER_INPUT)
     print("Owener selected after : "+owner_selected)
@@ -105,13 +108,15 @@ def main():
     print(df_csv.columns)
     df = pd.DataFrame(df_csv)
     
-    netoyage_manageo(df,FICHIER_OUTPUT,hapikey,owner_selected)
-    # if('Google ID' in df.columns):
-    #     flag = 0
-    #     netoyage_scraperIo(df,FICHIER_OUTPUT,hapikey,owner_selected)
-    # else: 
-    #     flag = 1
-    #     netoyage_CdProject(df,FICHIER_OUTPUT,hapikey,owner_selected)
+    if(os.environ.get("manageo") == "True"):
+        netoyage_manageo(df,FICHIER_OUTPUT,hapikey,owner_selected)
+    else:
+        if('Google ID' in df.columns):
+            flag = 0
+            netoyage_scraperIo(df,FICHIER_OUTPUT,hapikey,owner_selected)
+        else: 
+            flag = 1
+            netoyage_CdProject(df,FICHIER_OUTPUT,hapikey,owner_selected)
         
         
 
@@ -685,7 +690,41 @@ def netoyage_manageo(df,FICHIER_OUTPUT,hapikey,owner_selected,df_contact=None):
     df_comp['responsable'] = df_comp['Nom dirigeant principal'].astype(str) +" "+ df_comp["Prénom dirigeant principal"]
     df_comp = df_comp.drop(['Nom dirigeant principal','Prénom dirigeant principal'],axis=1)     
     df_comp.rename(columns={'Adresse normée ligne 4':'adresse'}, inplace=True)
+    df_comp = mng.netoyage_email(df_comp)
     # ----------------- #
+    
+    #! Gestion de la taille des fichiers d'imports
+    print("TAILLE AVANT : "+str(len(df_comp)))
+    print("RANGE : "+str(int(os.environ.get("range_bot")))+str(int(os.environ.get("range_top"))))
+    ## A GERER ##
+    df_comp = df_comp.iloc[int(os.environ.get("range_bot")):int(os.environ.get("range_top"))] #Mettre un bouton pour gérer ça
+    # df_clean = df_clean.iloc[0:220]
+    print("TAILLE APRES : "+str(len(df_comp)))
+
+    # RANDOM DATAFRAME
+    df_comp = df_comp.sample(frac=1).reset_index(drop=True)
+    print("TAILLE APRES après : "+str(len(df_comp)))
+    
+    # * Gestion des contacts
+    if(dfc is not None):
+        print("TAILLE AVANT CONTACT: "+str(len(dfc)))
+        print("RANGE : "+str(int(os.environ.get("range_bot_mngC")))+str(int(os.environ.get("range_top_mngC"))))
+        ## A GERER ##
+        dfc = dfc.iloc[int(os.environ.get("range_bot_mngC")):int(os.environ.get("range_top_mngC"))] #Mettre un bouton pour gérer ça
+        # df_clean = df_clean.iloc[0:220]
+        print("TAILLE APRES CONTACT: "+str(len(dfc)))
+
+        # RANDOM DATAFRAME
+        dfc = dfc.sample(frac=1).reset_index(drop=True)
+        print("TAILLE APRES après CONTACT : "+str(len(dfc)))
+    
+    
+    #! ----------------- #
+    
+    
+    
+    
+    
     
     if(dfc is not None):
         #DFC NETOYAGE
@@ -705,13 +744,16 @@ def netoyage_manageo(df,FICHIER_OUTPUT,hapikey,owner_selected,df_contact=None):
             dfc = assign_specified_owner(dfc,owner_selected)
         
     df_comp = df_comp.assign(leadStatus="NEW")
-    if(dfc is not None):
-        dfc = dfc.assign(leadStatus="NEW")
-
     df_comp = df_comp.assign(id="NAN")
     df_comp['id'] = df_comp['Raison sociale']+df_comp['Téléphone']
     print(df_comp['id'])
-    df_clean = add_refListing(df_clean,os.environ.get("name_fichier"),"manageo")
+    # df_clean = add_refListing(df_clean,os.environ.get("name_fichier"),"manageo")
+    
+    if(dfc is not None):
+        dfc = dfc.assign(leadStatus="NEW")
+        dfc = dfc.assign(id="NAN")
+        dfc['id'] = dfc['Raison sociale']+dfc['Téléphone']+dfc['Email']
+    
     # EXPORT CSV
     df_comp.to_csv(FICHIER_OUTPUT,index=False,encoding='utf-8')
         
@@ -797,23 +839,23 @@ def netoyage_manageo(df,FICHIER_OUTPUT,hapikey,owner_selected,df_contact=None):
             },
             {
                 "columnObjectTypeId": "0-2",
-                "columnName": "Ville",
-                "propertyName": "city",
+                "columnName": "Chiffre d'affaires",
+                "propertyName": "total_revenue ",
                 "idColumnType": None
             },
-    #             {
-    #             "columnObjectTypeId": "0-2",
-    #             "columnName": "Unique_Email",
-    #             "propertyName": "email",
-    #             "idColumnType": None
-    #         },
-    #             {
-    #             "columnObjectTypeId": "0-2",
-    #             "columnName": "provenance",
-    #             "propertyName": "provenance_donnee",
-    #             "idColumnType": None
-    #         },
-                {
+            {
+                "columnObjectTypeId": "0-2",
+                "columnName": "responsable",
+                "propertyName": "responsable ",
+                "idColumnType": None
+            },
+            {
+                "columnObjectTypeId": "0-2",
+                "columnName": "Unique_Email",
+                "propertyName": "email",
+                "idColumnType": None
+            },
+            {
                 "columnObjectTypeId": "0-2",
                 "columnName": "owner",
                 "propertyName": "hubspot_owner_id",
@@ -867,21 +909,64 @@ def netoyage_manageo(df,FICHIER_OUTPUT,hapikey,owner_selected,df_contact=None):
                     "hasHeader": True,
                     "columnMappings": [
                         {
-                            "columnObjectTypeId": "0-2",
-                            "columnName": "company",
+                            "columnObjectTypeId": "0-1",
+                            "columnName": "Civilité",
+                            "propertyName": "salutation",
+                            "idColumnType": None
+                        },
+                        {
+                            "columnObjectTypeId": "0-1",
+                            "columnName": "Nom",
                             "propertyName": "name",
                             "idColumnType": None
                         },
                         {
                             "columnObjectTypeId": "0-1",
-                            "columnName": "Nom contact",
-                            "propertyName": "lastname",
+                            "columnName": "Prénom",
+                            "propertyName": "firstname",
                             "idColumnType": None
                         },
                         {
                             "columnObjectTypeId": "0-1",
-                            "columnName": "Prenom contact",
-                            "propertyName": "firstname",
+                            "columnName": "Fonction",
+                            "propertyName": "job_function",
+                            "idColumnType": None
+                        },
+                        {
+                            "columnObjectTypeId": "0-2",
+                            "columnName": "Raison sociale",
+                            "propertyName": "company",
+                            "idColumnType": None
+                        },
+                        {
+                            "columnObjectTypeId": "0-1",
+                            "columnName": "Téléphone",
+                            "propertyName": "phone",
+                            "idColumnType": None
+                        },
+                        {
+                            "columnObjectTypeId": "0-1",
+                            "columnName": "Email",
+                            "propertyName": "email",
+                            "idColumnType": None
+                        },
+                        {
+                            "columnObjectTypeId": "0-2",
+                            "columnName": "owner",
+                            "propertyName": "hubspot_owner_id",
+                            "idColumnType": None
+                        },
+                        {
+                            "columnObjectTypeId": "0-2",
+                            "columnName": "leadStatus",
+                            "propertyName": "hs_lead_status",
+                            "idColumnType": None
+                        },
+                            #UNIQUE DOUBLONS
+                            {
+                            "columnObjectTypeId": "0-2",
+                            "columnName": "id",
+                            "propertyName": "id_unique",
                             "idColumnType": None
                         },
                     ]
