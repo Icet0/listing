@@ -316,14 +316,14 @@ def my_app():
             
         def rangeOK_Contact():
             print(text_top_contact)
-            os.environ['range_bot_mngC']=text_top_contact.get()
+            os.environ['range_bot_mngC']=text_bot_contact.get()
             print("range top contact mng get !!!!!!! : "+text_top_contact.get())
-            os.environ['range_top_mngC']=text_bot_contact.get()
+            os.environ['range_top_mngC']=text_top_contact.get()
             # changeState(b_running)
                    
         manageo = True
         win = Toplevel(frm)
-      
+        disableState(b_mng)
         # A Label widget to show in toplevel
         Label(win,
             text ="Choisir les fichiers d'import pour manageo").grid(row=0,column=0)   
@@ -359,7 +359,8 @@ def my_app():
     frm.grid(column=5,row=5)
         
     # * Manageo 
-    b_mng = Button(frm, text="MANAGEO", width=20, command=selectManageo).grid(column=1,row=2,padx=5,pady=5)
+    b_mng = Button(frm, text="MANAGEO", width=20, command=selectManageo,state=NORMAL)
+    b_mng.grid(column=1,row=2,padx=5,pady=5)
     # -----------------
     
     Label(frm, text="Choisissez un csv à importer",width=40).grid(column=1, row=0,ipadx=5,ipady=5,sticky=N)

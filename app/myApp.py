@@ -82,34 +82,50 @@ def main():
     print("Hapikey after : "+hapikey)
 
     ####################
-    
-    
-    
-    try:
-        df_csv = pd.read_csv (str(FICHIER_INPUT),encoding='utf8', )
-    except:
+    df_contact = None
+    if(os.environ.get('manageo') == 'True'):
+        
         try:
-            df_csv = pd.read_csv (str(FICHIER_INPUT),sep="\t",encoding='utf8')     
+            df_csv = pd.read_csv (str(FICHIER_INPUT),encoding='utf8', sep=";")
+        except:
+            print("Error manageo")
+         #IF contact file exist
+        if (FICHIER_INPUT_CONTACT != ''):
+            try:
+                df_csv_c = pd.read_csv (str(FICHIER_INPUT_CONTACT),encoding='utf8',sep=";" )
+            except:
+                print("Error manageo contact")
+               
+            print(df_csv_c.columns)
+            df_contact = pd.DataFrame(df_csv_c)
+        
+    else:
+    
+        try:
+            df_csv = pd.read_csv (str(FICHIER_INPUT),encoding='utf8', )
         except:
             try:
-                df_csv = pd.read_csv (str(FICHIER_INPUT),sep=";",encoding='utf8')
-            except :
+                df_csv = pd.read_csv (str(FICHIER_INPUT),sep="\t",encoding='utf8')     
+            except:
                 try:
-                    df_csv = pd.read_csv (str(FICHIER_INPUT),encoding='latin-1', )
-                except:
+                    df_csv = pd.read_csv (str(FICHIER_INPUT),sep=";",encoding='utf8')
+                except :
                     try:
-                        df_csv = pd.read_csv (str(FICHIER_INPUT),sep=";",encoding='latin-1')
+                        df_csv = pd.read_csv (str(FICHIER_INPUT),encoding='latin-1', )
                     except:
                         try:
-                            df_csv = pd.read_csv (str(FICHIER_INPUT),sep="\t",encoding='latin-1')
-                        except :
-                            print('read_csv error : '+str("!"))
-
+                            df_csv = pd.read_csv (str(FICHIER_INPUT),sep=";",encoding='latin-1')
+                        except:
+                            try:
+                                df_csv = pd.read_csv (str(FICHIER_INPUT),sep="\t",encoding='latin-1')
+                            except :
+                                print('read_csv error : '+str("!"))
     print(df_csv.columns)
     df = pd.DataFrame(df_csv)
+           
     
     if(os.environ.get("manageo") == "True"):
-        netoyage_manageo(df,FICHIER_OUTPUT,hapikey,owner_selected)
+        netoyage_manageo(df,FICHIER_OUTPUT,hapikey,owner_selected,df_contact)
     else:
         if('Google ID' in df.columns):
             flag = 0
@@ -458,8 +474,7 @@ def netoyage_scraperIo(df,FICHIER_OUTPUT,hapikey,owner_selected):
     df_addrClean = nsrap.netoyage_addr(df_EmailClean)
     df_zipClean = nsrap.netoyage_codeZip(df_addrClean)
     df_clean = df_zipClean
-    # BLACLIST
-    df_clean = removeBlackList(df_clean,apikey=hapikey)
+    
     
     try:
         df_clean = nsrap.globalClean(df_clean)
@@ -492,6 +507,9 @@ def netoyage_scraperIo(df,FICHIER_OUTPUT,hapikey,owner_selected):
     df_clean = df_clean[(df_clean['Téléphone'] != '' ) | (df_clean['Email'] !='') | (df_clean['Téléphone suplémentaire']!= '')
                    | (df_clean['Site internet (url racine)']!= '') | (df_clean['Page de contact 1']!= '')]
 
+
+    # ? BLACLIST
+    df_clean = removeBlackList(df_clean,apikey=hapikey)
 
     # API Call
     # ASSIGN Des owner
@@ -672,26 +690,38 @@ def netoyage_manageo(df,FICHIER_OUTPUT,hapikey,owner_selected,df_contact=None):
     #NETOYAGE MANAGEO selection des colonnes
     manageoDF = pd.DataFrame(df,columns=['Siret','Raison sociale', 'Adresse normée ligne 4', 'Ville', 'Code postal', 'Libellé activité','Code activité', 'Date de création',
                                             'Tranche Effectif INSEE','Téléphone', 'Email', "Chiffre d'affaires" , 'Nom dirigeant principal', 'Prénom dirigeant principal'])
+    manageoDFC = None
     if(df_contact is not None):
         manageoDFC = pd.DataFrame(df_contact,columns=['Civilité','Nom', 'Prénom', 'Fonction', 'Raison sociale', 'Téléphone','Email'])
 
-    df_comp,dfc = mng.test()
-    df_comp = removeBlackList(df_comp,apikey=hapikey)
-
-
+    # df_comp,dfc = mng.test()
+    df_comp = manageoDF.copy()
+    if(manageoDFC is not None):
+        dfc = manageoDFC.copy()
+    else:
+        dfc = None
+        
             
     #DF COMP NETOYAGE
-    df_comp['Téléphone'] = df_comp['Téléphone'].apply(mng.format_phone)
-    df_comp['Date de création'] = df_comp['Date de création'].apply(mng.getAnneeCreation)
-    df_comp = df_comp.assign(responsable="NAN")
+    #rename colonne Raison sociale in Nom
     df_comp = df_comp.replace(np.nan,'')
     df_comp = df_comp.replace('nan','')
     df_comp = df_comp.replace('NaN','')
+    df_comp['Téléphone'] = df_comp['Téléphone'].apply(mng.format_phone)
+    df_comp['Date de création'] = df_comp['Date de création'].apply(mng.getAnneeCreation)
+    df_comp = df_comp.assign(responsable="NAN")
     df_comp['responsable'] = df_comp['Nom dirigeant principal'].astype(str) +" "+ df_comp["Prénom dirigeant principal"]
     df_comp = df_comp.drop(['Nom dirigeant principal','Prénom dirigeant principal'],axis=1)     
     df_comp.rename(columns={'Adresse normée ligne 4':'adresse'}, inplace=True)
+    df_comp.rename(columns={'Libellé activité':'la'}, inplace=True)
+    df_comp.rename(columns={'Code activité':'ca'}, inplace=True)
+    df_comp.rename(columns={'Date de création':'dc'}, inplace=True)
     df_comp = mng.netoyage_email(df_comp)
     # ----------------- #
+    
+    # ? BLACK LIST
+    df_comp.rename(columns={'Raison sociale':'Nom'}, inplace=True)
+    df_comp = removeBlackList(df_comp,apikey=hapikey)
     
     #! Gestion de la taille des fichiers d'imports
     print("TAILLE AVANT : "+str(len(df_comp)))
@@ -723,15 +753,13 @@ def netoyage_manageo(df,FICHIER_OUTPUT,hapikey,owner_selected,df_contact=None):
     
     
     
-    
-    
-    
     if(dfc is not None):
         #DFC NETOYAGE
-        dfc['Téléphone'] = dfc['Téléphone'].apply(mng.format_phone)
         dfc = dfc.replace(np.nan,'')
         dfc = dfc.replace('nan','')
         dfc = dfc.replace('NaN','')
+        dfc['Téléphone'] = dfc['Téléphone'].apply(mng.format_phone)
+        
         # ----------------- #
     
     
@@ -745,7 +773,7 @@ def netoyage_manageo(df,FICHIER_OUTPUT,hapikey,owner_selected,df_contact=None):
         
     df_comp = df_comp.assign(leadStatus="NEW")
     df_comp = df_comp.assign(id="NAN")
-    df_comp['id'] = df_comp['Raison sociale']+df_comp['Téléphone']
+    df_comp['id'] = df_comp['Nom']+df_comp['Téléphone']
     print(df_comp['id'])
     # df_clean = add_refListing(df_clean,os.environ.get("name_fichier"),"manageo")
     
@@ -779,7 +807,7 @@ def netoyage_manageo(df,FICHIER_OUTPUT,hapikey,owner_selected,df_contact=None):
             },
             {
                 "columnObjectTypeId": "0-2",
-                "columnName": "Raison sociale",
+                "columnName": "Nom",
                 "propertyName": "name",
                 "idColumnType": None
             },
@@ -803,19 +831,19 @@ def netoyage_manageo(df,FICHIER_OUTPUT,hapikey,owner_selected,df_contact=None):
             },
             {
                 "columnObjectTypeId": "0-2",
-                "columnName": "Libellé activité",
+                "columnName": "la",
                 "propertyName": "secteurs_d_activite",
                 "idColumnType": None
             },
             {
                 "columnObjectTypeId": "0-2",
-                "columnName": "Code activité",
+                "columnName": "ca",
                 "propertyName": "code_activite",
                 "idColumnType": None
             },
             {
                 "columnObjectTypeId": "0-2",
-                "columnName": "Date de création",
+                "columnName": "dc",
                 "propertyName": "founded_year",
                 "idColumnType": None
             },
@@ -840,13 +868,13 @@ def netoyage_manageo(df,FICHIER_OUTPUT,hapikey,owner_selected,df_contact=None):
             {
                 "columnObjectTypeId": "0-2",
                 "columnName": "Chiffre d'affaires",
-                "propertyName": "total_revenue ",
+                "propertyName": "annualrevenue",
                 "idColumnType": None
             },
             {
                 "columnObjectTypeId": "0-2",
                 "columnName": "responsable",
-                "propertyName": "responsable ",
+                "propertyName": "responsable",
                 "idColumnType": None
             },
             {
@@ -894,6 +922,8 @@ def netoyage_manageo(df,FICHIER_OUTPUT,hapikey,owner_selected,df_contact=None):
         }
     ]
     }
+    wait = input("Appuyez sur une touche pour continuer . . . ")
+
     # EXPORT HUBSPOT
     insert.insertion_hubspot(FICHIER_OUTPUT,hapikey,data)
     if(dfc is not None):
@@ -917,7 +947,7 @@ def netoyage_manageo(df,FICHIER_OUTPUT,hapikey,owner_selected,df_contact=None):
                         {
                             "columnObjectTypeId": "0-1",
                             "columnName": "Nom",
-                            "propertyName": "name",
+                            "propertyName": "lastname",
                             "idColumnType": None
                         },
                         {
@@ -935,7 +965,7 @@ def netoyage_manageo(df,FICHIER_OUTPUT,hapikey,owner_selected,df_contact=None):
                         {
                             "columnObjectTypeId": "0-2",
                             "columnName": "Raison sociale",
-                            "propertyName": "company",
+                            "propertyName": "name",
                             "idColumnType": None
                         },
                         {
@@ -951,20 +981,20 @@ def netoyage_manageo(df,FICHIER_OUTPUT,hapikey,owner_selected,df_contact=None):
                             "idColumnType": None
                         },
                         {
-                            "columnObjectTypeId": "0-2",
+                            "columnObjectTypeId": "0-1",
                             "columnName": "owner",
                             "propertyName": "hubspot_owner_id",
                             "idColumnType": None
                         },
                         {
-                            "columnObjectTypeId": "0-2",
+                            "columnObjectTypeId": "0-1",
                             "columnName": "leadStatus",
                             "propertyName": "hs_lead_status",
                             "idColumnType": None
                         },
                             #UNIQUE DOUBLONS
                             {
-                            "columnObjectTypeId": "0-2",
+                            "columnObjectTypeId": "0-1",
                             "columnName": "id",
                             "propertyName": "id_unique",
                             "idColumnType": None
@@ -1001,7 +1031,6 @@ def myBacklList(apikey):
 def removeBlackList(df,apikey):
     blackList = myBacklList(apikey)
     df['name_normalized'] = df['Nom'].apply(lambda x: unidecode.unidecode(re.sub(r'[^\w\s_]', '', x.lower()).replace(' ', '').replace('_','')))
-    print(df['name_normalized'])
     # Créer une liste contenant les noms normalisés de la blacklist
     blacklist_names = [unidecode.unidecode(re.sub(r'[^\w\s_]', '', item['properties']['name'].lower()).replace(' ', '').replace('_','')) for item in blackList]
 
@@ -1012,9 +1041,10 @@ def removeBlackList(df,apikey):
     # Sélectionner les lignes du DataFrame qui ont une valeur dans la colonne "name_normalized"
     # qui contient une chaîne de caractères de la liste de la blacklist
     df_filtered = df[df['name_normalized'].str.contains('|'.join(blacklist_names))]
-    
+    print('Nombre de lignes filtrées en BLACKLIST:', len(df_filtered))
     # Supprimer la colonne "name_normalized" du dataframe final
     df = df.drop(df_filtered.index)
+    df = df.drop('name_normalized', axis=1)
 
     return df
     

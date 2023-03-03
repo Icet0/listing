@@ -72,19 +72,21 @@ def is_nan(x):
     return math.isnan(x)
 
 def format_phone(phone):
+    if(phone == ''):
+        return phone
     if(not is_nan(phone)):
         phone = int(phone)
         phone = '0'+str(phone)
-        print(phone)
+        # print(phone)
         # Enlève tous les caractères qui ne sont pas des chiffres
         prefixe = '+33'
         numero = phone.replace(' ', '')
         numero = numero.replace('-', '')
         numero = numero.replace('.', '')
         numero = prefixe + numero[1:]
-        print("numero",numero)
+        # print("numero",numero)
         numero_formatte = numero[0:3] + ' ' + numero[3]+' '+' '.join([numero[i:i+2] for i in range(4, len(numero), 2)])
-        print("numero_formatte",numero_formatte)
+        # print("numero_formatte",numero_formatte)
         return numero_formatte
     else:
         return phone
