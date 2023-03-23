@@ -120,7 +120,7 @@ def main():
                                 df_csv = pd.read_csv (str(FICHIER_INPUT),sep="\t",encoding='latin-1')
                             except :
                                 print('read_csv error : '+str("!"))
-    print(df_csv.columns)
+    print("columns",df_csv.columns)
     df = pd.DataFrame(df_csv)
            
     
@@ -301,7 +301,6 @@ def netoyage_CdProject(df,FICHIER_OUTPUT,hapikey,owner_selected):
     df_CDProject_tmp = df_CDProject_tmp.assign(leadStatus="NEW")
     df_CDProject_tmp = df_CDProject_tmp.assign(id="NAN")
     df_CDProject_tmp['id'] = df_CDProject_tmp['Nom']+df_CDProject_tmp['Téléphone']
-    print(df_CDProject_tmp['id'])
     df_CDProject_tmp = add_refListing(df_CDProject_tmp,os.environ.get("name_fichier"),"CdProject")
 
     # EXPORT CSV
@@ -689,10 +688,10 @@ def netoyage_scraperIo(df,FICHIER_OUTPUT,hapikey,owner_selected):
 def netoyage_manageo(df,FICHIER_OUTPUT,hapikey,owner_selected,df_contact=None):
     #NETOYAGE MANAGEO selection des colonnes
     manageoDF = pd.DataFrame(df,columns=['Siret','Raison sociale', 'Adresse normée ligne 4', 'Ville', 'Code postal', 'Libellé activité','Code activité', 'Date de création',
-                                            'Tranche Effectif INSEE','Téléphone', 'Email', "Chiffre d'affaires" , 'Nom dirigeant principal', 'Prénom dirigeant principal'])
+                                            'Tranche Effectif INSEE','Téléphone', "Site Web","Facebook","Twitter","LinkedIn", 'Email', "Chiffre d'affaires" , 'Nom dirigeant principal', 'Prénom dirigeant principal'])
     manageoDFC = None
     if(df_contact is not None):
-        manageoDFC = pd.DataFrame(df_contact,columns=['Civilité','Nom', 'Prénom', 'Fonction', 'Raison sociale', 'Téléphone','Email'])
+        manageoDFC = pd.DataFrame(df_contact,columns=['Civilité','Nom', 'Prénom', 'Fonction', 'Raison sociale', 'Téléphone',"Site Web","Facebook","Twitter","LinkedIn",'Email'])
 
     # df_comp,dfc = mng.test()
     df_comp = manageoDF.copy()
@@ -749,6 +748,7 @@ def netoyage_manageo(df,FICHIER_OUTPUT,hapikey,owner_selected,df_contact=None):
         print("TAILLE APRES après CONTACT : "+str(len(dfc)))
     
     
+    
     #! ----------------- #
     
     
@@ -782,6 +782,8 @@ def netoyage_manageo(df,FICHIER_OUTPUT,hapikey,owner_selected,df_contact=None):
         dfc = dfc.assign(id="NAN")
         dfc['id'] = dfc['Raison sociale']+dfc['Téléphone']+dfc['Email']
     
+    df_comp = add_refListing(df_comp,os.environ.get("name_fichier"),"Manageo")
+
     # EXPORT CSV
     df_comp.to_csv(FICHIER_OUTPUT,index=False,encoding='utf-8')
         
@@ -859,6 +861,32 @@ def netoyage_manageo(df,FICHIER_OUTPUT,hapikey,owner_selected,df_contact=None):
                 "propertyName": "phone",
                 "idColumnType": None
             },
+            #RAJOUT ENTREPRISE 2.0
+            {
+                "columnObjectTypeId": "0-2",
+                "columnName": "Site Web",
+                "propertyName": "website",
+                "idColumnType": None
+            },#"Facebook";"Twitter";"LinkedIn"
+            {
+                "columnObjectTypeId": "0-2",
+                "columnName": "Facebook",
+                "propertyName": "facebook_company_page",
+                "idColumnType": None
+            },
+            {
+                "columnObjectTypeId": "0-2",
+                "columnName": "Twitter",
+                "propertyName": "twitterhandle",
+                "idColumnType": None
+            },
+            {
+                "columnObjectTypeId": "0-2",
+                "columnName": "LinkedIn",
+                "propertyName": "linkedin_company_page",
+                "idColumnType": None
+            },
+            #---------------------
             {
                 "columnObjectTypeId": "0-2",
                 "columnName": "Email",
@@ -896,19 +924,19 @@ def netoyage_manageo(df,FICHIER_OUTPUT,hapikey,owner_selected,df_contact=None):
                 "idColumnType": None
             },
                 #UNIQUE DOUBLONS
-                {
+            {
                 "columnObjectTypeId": "0-2",
                 "columnName": "id",
                 "propertyName": "id_unique",
                 "idColumnType": None
             },
 
-            #     {
-            #     "columnObjectTypeId": "0-2",
-            #     "columnName": "Ref",
-            #     "propertyName": "ref",
-            #     "idColumnType": None
-            # },
+            {
+                "columnObjectTypeId": "0-2",
+                "columnName": "Ref",
+                "propertyName": "ref",
+                "idColumnType": None
+            },
             # #     {
             # #     "columnObjectTypeId": "0-2",
             # #     "columnName": "Nom_listing",
@@ -974,6 +1002,32 @@ def netoyage_manageo(df,FICHIER_OUTPUT,hapikey,owner_selected,df_contact=None):
                             "propertyName": "phone",
                             "idColumnType": None
                         },
+                        #RAJOUT ENTREPRISE 2.0
+                        {
+                            "columnObjectTypeId": "0-1",
+                            "columnName": "Site Web",
+                            "propertyName": "website",
+                            "idColumnType": None
+                        },#"Facebook";"Twitter";"LinkedIn"
+                        {
+                            "columnObjectTypeId": "0-1",
+                            "columnName": "Facebook",
+                            "propertyName": "hs_facebook_click_id",
+                            "idColumnType": None
+                        },
+                        {
+                            "columnObjectTypeId": "0-1",
+                            "columnName": "Twitter",
+                            "propertyName": "twitterhandle",
+                            "idColumnType": None
+                        },
+                        {
+                            "columnObjectTypeId": "0-1",
+                            "columnName": "LinkedIn",
+                            "propertyName": "lgm_linkedinurl",
+                            "idColumnType": None
+                        },
+                        #---------------------
                         {
                             "columnObjectTypeId": "0-1",
                             "columnName": "Email",
@@ -1030,9 +1084,9 @@ def myBacklList(apikey):
 
 def removeBlackList(df,apikey):
     blackList = myBacklList(apikey)
-    df['name_normalized'] = df['Nom'].apply(lambda x: unidecode.unidecode(re.sub(r'[^\w\s_]', '', x.lower()).replace(' ', '').replace('_','')))
+    df['name_normalized'] = df['Nom'].apply(lambda x: unidecode.unidecode(re.sub(r'[^\w\s_]', '', x.lower()).replace('_',' ')))
     # Créer une liste contenant les noms normalisés de la blacklist
-    blacklist_names = [unidecode.unidecode(re.sub(r'[^\w\s_]', '', item['properties']['name'].lower()).replace(' ', '').replace('_','')) for item in blackList]
+    blacklist_names = [unidecode.unidecode(re.sub(r'[^\w\s_]', '', item['properties']['name'].lower()).replace('_',' ')) for item in blackList]
 
     print(blacklist_names)
     # Sélectionner les lignes du dataframe qui ont une valeur dans la colonne "name_normalized" qui est dans la liste de la blacklist
@@ -1040,8 +1094,23 @@ def removeBlackList(df,apikey):
     
     # Sélectionner les lignes du DataFrame qui ont une valeur dans la colonne "name_normalized"
     # qui contient une chaîne de caractères de la liste de la blacklist
-    df_filtered = df[df['name_normalized'].str.contains('|'.join(blacklist_names))]
-    print('Nombre de lignes filtrées en BLACKLIST:', len(df_filtered))
+    
+    # df_filtered = df[df['name_normalized'].str.contains('|'.join(blacklist_names))]
+    # séparés par un espace (\b pour matcher les limites de mots)
+    blacklist_regex = r'\b(?:%s)\b' % '|'.join(map(re.escape, blacklist_names))
+
+    df_filtered = df[df['name_normalized'].str.contains(blacklist_regex)]
+    # Filtrer les noms d'entreprises blacklistées
+    df_blacklisted = df[df['name_normalized'].str.contains(blacklist_regex)]
+
+    # Créer une liste de tuples contenant les noms d'entreprises blacklistées 
+    # et les correspondances de blacklist_names qui les ont faites figurer dans la liste noire
+    blacklisted_names = [(name, [item for item in blacklist_names if re.search(r'\b%s\b' % re.escape(item), name)]) for name in df_blacklisted['name_normalized']]
+
+    # Afficher la liste de noms d'entreprises blacklistées et leurs correspondances de blacklist_names
+    for name, matches in blacklisted_names:
+        print(f"{name} a été blacklisté en raison de : {matches}")
+
     # Supprimer la colonne "name_normalized" du dataframe final
     df = df.drop(df_filtered.index)
     df = df.drop('name_normalized', axis=1)
