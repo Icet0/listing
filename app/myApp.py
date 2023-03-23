@@ -956,6 +956,15 @@ def netoyage_manageo(df,FICHIER_OUTPUT,hapikey,owner_selected,df_contact=None):
     insert.insertion_hubspot(FICHIER_OUTPUT,hapikey,data)
     if(dfc is not None):
         dfc.to_csv(FICHIER_OUTPUT,index=False,encoding='utf-8')
+        
+        #! Stop l'importation des contacts sans entreprises
+        # enterprise_list = df_comp['Nom'].unique().tolist()
+        # # Iterate over the contacts and import only if the associated enterprise is in the list
+        # for cmp in dfc['Raison sociale']:
+        #     if cmp not in enterprise_list:
+        #         # import contact
+        #! ------------------------------------------------   
+        
         data_contact = {
             "name": os.environ.get("name_fichier")+"contacts",
             "files": [
