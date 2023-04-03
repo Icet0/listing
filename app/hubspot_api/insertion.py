@@ -30,6 +30,21 @@ def insertion_hubspot(FICHIER_OUTPUT,api_key,data):
 
 
     response = requests.request("POST", url, data=payload, files=files,headers=headers)
-    print(response.encoding)
-    print(response.text.encode('utf8'))
-    print(response.status_code)
+    
+    # Check if the request was successful
+    import_id = None
+    # Check if the request was successful
+    if response.status_code == 200 or response.status_code == 202:
+      print(response.status_code)
+      # print("response headers ",response.headers)
+      # print("response encoding ",response.encoding)
+      # print("response text : ",response.text.encode('utf8'))
+      # Get the import ID from the response headers
+      response_dict = json.loads(response.text.encode('utf8'))
+      import_id = response_dict['id']
+      print(f"Import ID: {import_id}")
+    else:
+      print(f"Error: {response.status_code}")
+        
+    print("response text : ",response.text.encode('utf8'))
+    return import_id

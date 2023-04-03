@@ -1,8 +1,11 @@
 # import os
 # from msilib.schema import Error
+import json
 import pandas as pd
 import numpy as np
 import copy
+
+import requests
 import netoyage_CDProject.netoyage_cdp as ncdp
 from hubspot_api.requests import owner
 from interface.interface import my_app
@@ -18,8 +21,9 @@ import re
 import unidecode
 import hubspot_api.requests as hs
 
-
-
+import time
+from hubspot import HubSpot
+from hubspot.crm.objects import SimplePublicObjectInput
 
 def main():
     hapikey="pat-eu1-91242dbb-e9d6-4b77-852f-fdd31151e049"#"pat-eu1-26e9ca6f-6614-4320-b7eb-15b6ec1d25fe" cpt test
@@ -779,8 +783,13 @@ def netoyage_manageo(df,FICHIER_OUTPUT,hapikey,owner_selected,df_contact=None):
     
     if(dfc is not None):
         dfc = dfc.assign(leadStatus="NEW")
-        dfc = dfc.assign(id="NAN")
-        dfc['id'] = dfc['Raison sociale']+dfc['Téléphone']+dfc['Email']
+        dfc = dfc.assign(id="NAN") 
+        dfc.rename(columns={"Raison sociale": "companyID"}, inplace=True)
+        dfc['id'] = dfc['Nom']+dfc['companyID']+dfc['Téléphone']+dfc['Email']
+        dfc = dfc.drop_duplicates(subset=["id"], keep="first")
+
+
+
     
     df_comp = add_refListing(df_comp,os.environ.get("name_fichier"),"Manageo")
 
@@ -937,12 +946,12 @@ def netoyage_manageo(df,FICHIER_OUTPUT,hapikey,owner_selected,df_contact=None):
                 "propertyName": "ref",
                 "idColumnType": None
             },
-            # #     {
-            # #     "columnObjectTypeId": "0-2",
-            # #     "columnName": "Nom_listing",
-            # #     "propertyName": "nom_du_listing",
-            # #     "idColumnType": None
-            # # },
+                {
+                "columnObjectTypeId": "0-2",
+                "columnName": "Nom_listing",
+                "propertyName": "nom_du_listing",
+                "idColumnType": None
+            },
             
                 
             ]
@@ -950,11 +959,27 @@ def netoyage_manageo(df,FICHIER_OUTPUT,hapikey,owner_selected,df_contact=None):
         }
     ]
     }
-    wait = input("Appuyez sur une touche pour continuer . . . ")
+
 
     # EXPORT HUBSPOT
-    insert.insertion_hubspot(FICHIER_OUTPUT,hapikey,data)
+    import_id = insert.insertion_hubspot(FICHIER_OUTPUT,hapikey,data)
+    
+    
+    wait = input("Appuyez sur une touche pour continuer . . . ")
+    #Attendre la fin de l'importation
+    if import_id != None:
+        try:
+            while req.check_import_status(hapikey,import_id) != "DONE":
+                time.sleep(5)
+        except:
+            print("Erreur d'importation")
+            pass
+        
     if(dfc is not None):
+        for index, row in dfc.iterrows():
+            company_name = row['companyID']
+            company_id = getCompany(company_name, hapikey)
+            dfc.at[index, 'companyID'] = company_id
         dfc.to_csv(FICHIER_OUTPUT,index=False,encoding='utf-8')
         
         #! Stop l'importation des contacts sans entreprises
@@ -1001,8 +1026,8 @@ def netoyage_manageo(df,FICHIER_OUTPUT,hapikey,owner_selected,df_contact=None):
                         },
                         {
                             "columnObjectTypeId": "0-2",
-                            "columnName": "Raison sociale",
-                            "propertyName": "name",
+                            "columnName": "companyID",
+                            "propertyName": "hs_object_id",
                             "idColumnType": None
                         },
                         {
@@ -1067,10 +1092,72 @@ def netoyage_manageo(df,FICHIER_OUTPUT,hapikey,owner_selected,df_contact=None):
             }
         ]
         }
+        
+        #! ATESTER
+        # import csv
+        # from hubspot import HubSpot
+
+        # hubspot = HubSpot(api_key='YOUR_API_KEY')
+
+        # with open('contacts.csv', mode='r') as file:
+        #     reader = csv.DictReader(file)
+        #     for row in reader:
+        #         company_id = row.get('company_id')
+        #         if company_id is not None:
+        #             association = {
+        #                 "fromObjectId": row['company_id'],
+        #                 "toObjectId": row['contact_id'],
+        #                 "category": "HUBSPOT_DEFINED",
+        #                 "definitionId": 1
+        #             }
+        #             hubspot.crm.associations.create(data=[association], object_type='contacts_companies')
+        #         else:
+        #             print(f"No company ID found for contact {row['contact_id']}, skipping company association.")
+        #!--------
         wait = input("Appuyez sur une touche pour continuer . . . ")
         insert.insertion_hubspot(FICHIER_OUTPUT,hapikey,data_contact)
 
+def getCompany(company_name,apikey):
 
+    url = "https://api.hubapi.com/crm/v3/objects/companies/search"
+    headers={
+        'Content-type':'application/json', 
+        'authorization': 'Bearer %s' %apikey
+    }
+    body = {
+        "filterGroups": [
+        {
+            "filters": [
+            {
+                "value": company_name,
+                "propertyName": "name",
+                "operator": "EQ"
+            },
+
+            ],
+
+        }
+        ],
+
+        "limit": 30,
+        "after": 0
+    }
+    response = requests.request("POST", url,json=body,headers=headers)
+
+    # Vérification de la réponse de l'API
+    if response.status_code == 200:
+        response_data = json.loads(response.content.decode('utf-8'))
+        if len(response_data['results']) > 0:
+            # Récupération de l'ID de l'entreprise correspondante
+            company_id = response_data['results'][0]['id']
+        else:
+            # L'entreprise n'a pas été trouvée
+            company_id = None
+    else:
+        # La requête a échoué
+        company_id = None
+        print('Erreur: Impossible de récupérer l\'ID de l\'entreprise')
+    return company_id
 
 def myBacklList(apikey):
     myrep = hs.getBacklList(apikey)

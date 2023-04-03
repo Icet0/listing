@@ -122,3 +122,15 @@ def getBacklList(apikey,after=0):
   # print("total cpnm = "+str(response.json()['total']))
   return response.json()
 
+def check_import_status(api_key,import_id):
+    url = f"https://api.hubapi.com/crm/v3/imports/{import_id}"
+    headers = {
+        "Content-Type": "application/json",
+        'Authorization': 'Bearer %s' % api_key
+    }
+    response = requests.get(url, headers=headers)
+    if response.status_code != 200:
+        raise Exception("Unable to check import status")
+    data = json.loads(response.text)
+    print("data when wheck import status",data)
+    return data["state"]
