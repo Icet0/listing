@@ -2,6 +2,9 @@
 import requests
 import json
 import os
+import hubspot
+from pprint import pprint
+from hubspot.crm.associations import BatchInputPublicAssociation, ApiException
 
 
 def get_owner(api_key):
@@ -46,7 +49,7 @@ def getOwners_nb_cmpn(id_owner,api_key): #&hapikey="+str(api_key)
         }
       ],
 
-      "limit": 30,
+      "limit": 50,
       "after": 0
     }
     response = requests.request("POST", url,json=body,headers=headers)
@@ -121,6 +124,66 @@ def getBacklList(apikey,after=0):
   response = requests.request("POST", url,json=body,headers=headers)
   # print("total cpnm = "+str(response.json()['total']))
   return response.json()
+
+
+
+def setAssociation(apikey,idContacts,idCompanys, max_batch_size=1800):
+
+    client = hubspot.Client.create(access_token=apikey)
+
+    def model(idc,idcmp):
+        return {
+            "from": {
+                "id": idc
+            },
+            "to": {
+                "id": idcmp
+            },
+            "type": "contact_to_company"
+        }
+
+    # Diviser les entrées en batchs
+    inputs_batches = [list(zip(idContacts[i:i+max_batch_size], idCompanys[i:i+max_batch_size])) for i in range(0, len(idContacts), max_batch_size)]
+
+    for inputs_batch in inputs_batches:
+        inputs = [model(idc, idcmp) for idc, idcmp in inputs_batch]
+        batch_input_public_association = BatchInputPublicAssociation(inputs)
+        try:
+            api_response = client.crm.associations.batch_api.create(from_object_type="contact", to_object_type="company", batch_input_public_association=batch_input_public_association)
+            pprint("association created : {} results : ".format(len(inputs)))
+
+        except ApiException as e:
+            print("Exception when calling batch_api->create: %s\n" % e)
+            
+
+
+# def setAssociation(apikey,idContacts,idCompanys):
+
+#     client = hubspot.Client.create(access_token=apikey)
+
+#     def model(idc,idcmp):
+#         return {
+#         "from": {
+#             "id": idc
+#         },
+#         "to": {
+#             "id": idcmp
+#         },
+#         "type": "contact_to_company"
+#         }
+
+#     inputs = []
+#     for i in range(len(idContacts)):
+#         inputs.append(model(idContacts[i],idCompanys[i]))
+
+#     batch_input_public_association = BatchInputPublicAssociation(inputs)
+#     try:
+#         api_response = client.crm.associations.batch_api.create(from_object_type="contact", to_object_type="company", batch_input_public_association=batch_input_public_association)
+#         # pprint(api_response['status'])
+#         pprint("association created : ",len(idContacts),len(idCompanys), ' results : ',len(api_response['results']))
+#     except ApiException as e:
+#         print("Exception when calling batch_api->create: %s\n" % e)
+
 
 def check_import_status(api_key,import_id):
     url = f"https://api.hubapi.com/crm/v3/imports/{import_id}"

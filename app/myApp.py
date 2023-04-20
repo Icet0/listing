@@ -1,5 +1,6 @@
 # import os
 # from msilib.schema import Error
+import datetime
 import json
 import pandas as pd
 import numpy as np
@@ -24,6 +25,9 @@ import hubspot_api.requests as hs
 import time
 from hubspot import HubSpot
 from hubspot.crm.objects import SimplePublicObjectInput
+import hubspot
+from pprint import pprint
+from hubspot.crm.companies import ApiException
 
 def main():
     hapikey="pat-eu1-91242dbb-e9d6-4b77-852f-fdd31151e049"#"pat-eu1-26e9ca6f-6614-4320-b7eb-15b6ec1d25fe" cpt test
@@ -976,10 +980,22 @@ def netoyage_manageo(df,FICHIER_OUTPUT,hapikey,owner_selected,df_contact=None):
             pass
         
     if(dfc is not None):
+        # time.sleep(10)
+        myCompanies = getAllCompanies(hapikey)
+        
         for index, row in dfc.iterrows():
             company_name = row['companyID']
-            company_id = getCompany(company_name, hapikey)
+            if(company_name in myCompanies['properties.name'].values):
+                idx = myCompanies[myCompanies['properties.name'] == company_name].index[0]
+                company_id = myCompanies['id'][idx]
+            else:
+                company_id = None
             dfc.at[index, 'companyID'] = company_id
+        
+        
+        dfc = dfc.dropna(subset=['companyID'])
+        dfc_copy = dfc.copy()
+        dfc.drop(['companyID'], axis=1, inplace=True)
         dfc.to_csv(FICHIER_OUTPUT,index=False,encoding='utf-8')
         
         #! Stop l'importation des contacts sans entreprises
@@ -1024,12 +1040,12 @@ def netoyage_manageo(df,FICHIER_OUTPUT,hapikey,owner_selected,df_contact=None):
                             "propertyName": "job_function",
                             "idColumnType": None
                         },
-                        {
-                            "columnObjectTypeId": "0-2",
-                            "columnName": "companyID",
-                            "propertyName": "hs_object_id",
-                            "idColumnType": None
-                        },
+                        # {
+                        #     "columnObjectTypeId": "0-2",
+                        #     "columnName": "companyID",
+                        #     "propertyName": "hs_object_id",
+                        #     "idColumnType": None
+                        # },
                         {
                             "columnObjectTypeId": "0-1",
                             "columnName": "Téléphone",
@@ -1093,32 +1109,39 @@ def netoyage_manageo(df,FICHIER_OUTPUT,hapikey,owner_selected,df_contact=None):
         ]
         }
         
-        #! ATESTER
-        # import csv
-        # from hubspot import HubSpot
-
-        # hubspot = HubSpot(api_key='YOUR_API_KEY')
-
-        # with open('contacts.csv', mode='r') as file:
-        #     reader = csv.DictReader(file)
-        #     for row in reader:
-        #         company_id = row.get('company_id')
-        #         if company_id is not None:
-        #             association = {
-        #                 "fromObjectId": row['company_id'],
-        #                 "toObjectId": row['contact_id'],
-        #                 "category": "HUBSPOT_DEFINED",
-        #                 "definitionId": 1
-        #             }
-        #             hubspot.crm.associations.create(data=[association], object_type='contacts_companies')
-        #         else:
-        #             print(f"No company ID found for contact {row['contact_id']}, skipping company association.")
-        #!--------
+        
+        # #!--------
         wait = input("Appuyez sur une touche pour continuer . . . ")
-        insert.insertion_hubspot(FICHIER_OUTPUT,hapikey,data_contact)
+        import_id = insert.insertion_hubspot(FICHIER_OUTPUT,hapikey,data_contact)
+        if import_id != None:
+            try:
+                while req.check_import_status(hapikey,import_id) != "DONE":
+                    time.sleep(5)
+            except:
+                print("Erreur d'importation")
+                pass
+            
+        contacts = getAllContacts(hapikey)
+        companies_id = []
+        contacts_id = []
+        for index, row in dfc_copy.iterrows():
+            if row['id'] in contacts['properties.id_unique'].values:
+                company_id = row.get('companyID')
+                idx = contacts[contacts['properties.id_unique'] == row['id']].index[0]
+                contact_id = contacts['id'][idx]
+                if company_id is not None:
+                    # req.setAssociation(hapikey, contact_id, company_id)
+                    companies_id.append(company_id)
+                    contacts_id.append(contact_id)
+                else:
+                    print(f"No company ID found for contact {contact_id}, skipping company association.")
+            else:
+                print(f"No contact found for  {row['id']}, skipping company association.")
+        req.setAssociation(hapikey, contacts_id, companies_id)
 
 def getCompany(company_name,apikey):
 
+#! Ne par chercher par nom, get all company et ensuite faire un filtre sur le nom
     url = "https://api.hubapi.com/crm/v3/objects/companies/search"
     headers={
         'Content-type':'application/json', 
@@ -1156,8 +1179,192 @@ def getCompany(company_name,apikey):
     else:
         # La requête a échoué
         company_id = None
-        print('Erreur: Impossible de récupérer l\'ID de l\'entreprise')
+        # print('Erreur: Impossible de récupérer l\'ID de l\'entreprise')
     return company_id
+
+def getAllCompanies(apikey):
+    companies = []
+    NOW = datetime.datetime.now()
+    ONE_HOUR_AGO = NOW - datetime.timedelta(minutes=30)
+    EPOCH_ONE_HOUR_AGO = int(ONE_HOUR_AGO.timestamp() * 1000)
+    url = "https://api.hubapi.com/crm/v3/objects/companies/search"
+    headers={
+        'Content-type':'application/json', 
+        'authorization': 'Bearer %s' %apikey
+    }
+    after = 0
+    body = {
+        "filterGroups": [
+        {
+            "filters": [
+                {
+                    "value": EPOCH_ONE_HOUR_AGO,
+                    "propertyName": "createdate",
+                    "operator": "GT"
+                },
+            ],
+
+        }],
+        "properties": [
+            "id_unique",
+            "hs_object_id",
+            "name"
+        ],
+        "limit": 100,
+        "after": after
+    }
+    response = requests.request("POST", url,json=body,headers=headers)
+    response.raise_for_status()
+
+    data = response.json()
+    print("total cpnm = "+str(data['total']))
+
+    companies.extend(data['results'])
+    while data.get("paging"):
+        after = data['paging']['next']['after']
+        companies.extend(data['results'])
+        body = {
+        "filterGroups": [
+        {
+            "filters": [
+                {
+                    "value": EPOCH_ONE_HOUR_AGO,
+                    "propertyName": "createdate",
+                    "operator": "GT"
+                },
+            ],
+
+        }],
+            "properties": [
+                "id_unique",
+                "hs_object_id",
+                "name"
+            ],
+            "limit": 100,
+            "after": after
+        }
+        response = requests.request("POST", url,json=body,headers=headers)
+        response.raise_for_status()
+        data = response.json()
+
+        # Normalisation du JSON en DataFrame
+    df = pd.json_normalize(companies)
+
+    # Sélection des colonnes souhaitées
+    df = df.loc[:, ['id', 'properties.name','properties.id_unique']]    
+    return df
+    
+    
+def getAllContacts(apikey):
+    companies = []
+    NOW = datetime.datetime.now()
+    ONE_HOUR_AGO = NOW - datetime.timedelta(minutes=30)
+    EPOCH_ONE_HOUR_AGO = int(ONE_HOUR_AGO.timestamp() * 1000)
+    url = "https://api.hubapi.com/crm/v3/objects/contacts/search"
+    headers={
+        'Content-type':'application/json', 
+        'authorization': 'Bearer %s' %apikey
+    }
+    after = 0
+    body = {
+        "filterGroups": [
+        {
+            "filters": [
+                {
+                    "value": EPOCH_ONE_HOUR_AGO,
+                    "propertyName": "createdate",
+                    "operator": "GT"
+                },
+            ],
+
+        }],
+        "properties": [
+            "id_unique",
+        ],
+        "limit": 100,
+        "after": after
+    }
+    response = requests.request("POST", url,json=body,headers=headers)
+    response.raise_for_status()
+
+    data = response.json()
+    print("total cpnm = "+str(data['total']))
+
+    companies.extend(data['results'])
+    while data.get("paging"):
+        after = data['paging']['next']['after']
+        companies.extend(data['results'])
+        body = {
+        "filterGroups": [
+        {
+            "filters": [
+                {
+                    "value": EPOCH_ONE_HOUR_AGO,
+                    "propertyName": "createdate",
+                    "operator": "GT"
+                },
+            ],
+
+        }],
+            "properties": [
+                "id_unique",
+            ],
+            "limit": 100,
+            "after": after
+        }
+        response = requests.request("POST", url,json=body,headers=headers)
+        response.raise_for_status()
+        data = response.json()
+
+        # Normalisation du JSON en DataFrame
+    df = pd.json_normalize(companies)
+
+    # Sélection des colonnes souhaitées
+    df = df.loc[:, ['id','properties.id_unique']]    
+    return df
+    
+def getContact(contact_UniqueID,apikey):
+#! Ne par chercher par nom, get all contact et ensuite faire un filtre sur le nom
+
+    url = "https://api.hubapi.com/crm/v3/objects/contacts/search"
+    headers={
+        'Content-type':'application/json', 
+        'authorization': 'Bearer %s' %apikey
+    }
+    body = {
+        "filterGroups": [
+        {
+            "filters": [
+            {
+                "value": contact_UniqueID,
+                "propertyName": "id_unique",
+                "operator": "EQ"
+            },
+
+            ],
+
+        }
+        ],
+
+        "limit": 30,
+        "after": 0
+    }
+    response = requests.request("POST", url,json=body,headers=headers)
+
+    # Vérification de la réponse de l'API
+    if response.status_code == 200:
+        response_data = json.loads(response.content.decode('utf-8'))
+        if len(response_data['results']) > 0:
+            # Récupération de l'ID de l'entreprise correspondante
+            contact_id = response_data['results'][0]['id']
+        else:
+            # L'entreprise n'a pas été trouvée
+            contact_id = None
+    else:
+        # La requête a échoué
+        contact_id = None
+        print('Erreur: Impossible de récupérer l\'ID de l\'entreprise')
+    return contact_id
 
 def myBacklList(apikey):
     myrep = hs.getBacklList(apikey)
