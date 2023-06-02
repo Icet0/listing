@@ -1,5 +1,6 @@
 # import os
 # from msilib.schema import Error
+from asyncio import wait
 import datetime
 import json
 import pandas as pd
@@ -217,7 +218,7 @@ def add_refListing(df,name_fichier,origine):
     
     # df = df.assign(Ref="TRY")
     df = df.assign(Nom_listing=name_fichier)
-    return df
+    return df,ref
 
 
     
@@ -309,7 +310,7 @@ def netoyage_CdProject(df,FICHIER_OUTPUT,hapikey,owner_selected):
     df_CDProject_tmp = df_CDProject_tmp.assign(leadStatus="NEW")
     df_CDProject_tmp = df_CDProject_tmp.assign(id="NAN")
     df_CDProject_tmp['id'] = df_CDProject_tmp['Nom']+df_CDProject_tmp['Téléphone']
-    df_CDProject_tmp = add_refListing(df_CDProject_tmp,os.environ.get("name_fichier"),"CdProject")
+    df_CDProject_tmp,_ = add_refListing(df_CDProject_tmp,os.environ.get("name_fichier"),"CdProject")
 
     # EXPORT CSV
     df_CDProject_tmp.to_csv(FICHIER_OUTPUT,index=False,encoding='utf-8')
@@ -529,7 +530,7 @@ def netoyage_scraperIo(df,FICHIER_OUTPUT,hapikey,owner_selected):
     df_clean = df_clean.assign(id="NAN")
     df_clean['id'] = df_clean['Nom']+df_clean['Téléphone']
     print(df_clean['id'])
-    df_clean = add_refListing(df_clean,os.environ.get("name_fichier"),"scrap.io")
+    df_clean,_ = add_refListing(df_clean,os.environ.get("name_fichier"),"scrap.io")
     # EXPORT CSV
     df_clean.to_csv(FICHIER_OUTPUT,index=False,encoding='utf-8')
 
@@ -795,7 +796,7 @@ def netoyage_manageo(df,FICHIER_OUTPUT,hapikey,owner_selected,df_contact=None):
 
 
     
-    df_comp = add_refListing(df_comp,os.environ.get("name_fichier"),"Manageo")
+    df_comp,ref = add_refListing(df_comp,os.environ.get("name_fichier"),"Manageo")
 
     # EXPORT CSV
     df_comp.to_csv(FICHIER_OUTPUT,index=False,encoding='utf-8')
@@ -974,14 +975,14 @@ def netoyage_manageo(df,FICHIER_OUTPUT,hapikey,owner_selected,df_contact=None):
     if import_id != None:
         try:
             while req.check_import_status(hapikey,import_id) != "DONE":
-                time.sleep(5)
+                time.sleep(10)
         except:
             print("Erreur d'importation")
             pass
         
     if(dfc is not None):
         # time.sleep(10)
-        myCompanies = getAllCompanies(hapikey)
+        myCompanies = getAllCompanies(hapikey,ref)
         
         for index, row in dfc.iterrows():
             company_name = row['companyID']
@@ -1116,7 +1117,7 @@ def netoyage_manageo(df,FICHIER_OUTPUT,hapikey,owner_selected,df_contact=None):
         if import_id != None:
             try:
                 while req.check_import_status(hapikey,import_id) != "DONE":
-                    time.sleep(5)
+                    time.sleep(10)
             except:
                 print("Erreur d'importation")
                 pass
@@ -1182,10 +1183,10 @@ def getCompany(company_name,apikey):
         # print('Erreur: Impossible de récupérer l\'ID de l\'entreprise')
     return company_id
 
-def getAllCompanies(apikey):
+def getAllCompanies(apikey,ref):
     companies = []
     NOW = datetime.datetime.now()
-    ONE_HOUR_AGO = NOW - datetime.timedelta(minutes=30)
+    ONE_HOUR_AGO = NOW - datetime.timedelta(minutes=10)
     EPOCH_ONE_HOUR_AGO = int(ONE_HOUR_AGO.timestamp() * 1000)
     url = "https://api.hubapi.com/crm/v3/objects/companies/search"
     headers={
@@ -1198,9 +1199,9 @@ def getAllCompanies(apikey):
         {
             "filters": [
                 {
-                    "value": EPOCH_ONE_HOUR_AGO,
-                    "propertyName": "createdate",
-                    "operator": "GT"
+                    "value": ref,
+                    "propertyName": "ref",
+                    "operator": "EQ"
                 },
             ],
 
@@ -1220,17 +1221,17 @@ def getAllCompanies(apikey):
     print("total cpnm = "+str(data['total']))
 
     companies.extend(data['results'])
+    time.sleep(2)
     while data.get("paging"):
         after = data['paging']['next']['after']
-        companies.extend(data['results'])
         body = {
         "filterGroups": [
         {
             "filters": [
                 {
-                    "value": EPOCH_ONE_HOUR_AGO,
-                    "propertyName": "createdate",
-                    "operator": "GT"
+                    "value": ref,
+                    "propertyName": "ref",
+                    "operator": "EQ"
                 },
             ],
 
@@ -1246,7 +1247,9 @@ def getAllCompanies(apikey):
         response = requests.request("POST", url,json=body,headers=headers)
         response.raise_for_status()
         data = response.json()
+        companies.extend(data['results'])
 
+        time.sleep(2)
         # Normalisation du JSON en DataFrame
     df = pd.json_normalize(companies)
 
@@ -1258,7 +1261,7 @@ def getAllCompanies(apikey):
 def getAllContacts(apikey):
     companies = []
     NOW = datetime.datetime.now()
-    ONE_HOUR_AGO = NOW - datetime.timedelta(minutes=30)
+    ONE_HOUR_AGO = NOW - datetime.timedelta(minutes=10)
     EPOCH_ONE_HOUR_AGO = int(ONE_HOUR_AGO.timestamp() * 1000)
     url = "https://api.hubapi.com/crm/v3/objects/contacts/search"
     headers={
@@ -1288,12 +1291,13 @@ def getAllContacts(apikey):
     response.raise_for_status()
 
     data = response.json()
-    print("total cpnm = "+str(data['total']))
+    print("total contact = "+str(data['total']))
 
     companies.extend(data['results'])
+    time.sleep(2)
+
     while data.get("paging"):
         after = data['paging']['next']['after']
-        companies.extend(data['results'])
         body = {
         "filterGroups": [
         {
@@ -1315,6 +1319,9 @@ def getAllContacts(apikey):
         response = requests.request("POST", url,json=body,headers=headers)
         response.raise_for_status()
         data = response.json()
+        companies.extend(data['results'])
+
+        time.sleep(2)
 
         # Normalisation du JSON en DataFrame
     df = pd.json_normalize(companies)

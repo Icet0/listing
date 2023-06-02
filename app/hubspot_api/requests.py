@@ -195,5 +195,5 @@ def check_import_status(api_key,import_id):
     if response.status_code != 200:
         raise Exception("Unable to check import status")
     data = json.loads(response.text)
-    print("data when wheck import status",data)
+    print("data when wheck import status")
     return data["state"]
