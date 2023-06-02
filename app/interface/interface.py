@@ -33,8 +33,9 @@ def my_app():
         list_owner.append(str_tmp)
     FICHIER_INPUT = os.environ.get("FICHIER_INPUT")
     owner_selected = os.environ.get("owner_selected")
-    fenetre = Tk()
+    fenetre = Tk(screenName="Super listing")
     fenetre.geometry("800x500")
+    fenetre.title("Super listing")
 
     name = StringVar()
     mon_fichier_cours = StringVar()
