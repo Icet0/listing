@@ -17,3 +17,6 @@ $cd app
 et utiliser 
 
 $ pyinstaller -F myApp
+
+
+ ![ Texte alternatif](/chemin/access/image. jpg "Titre de l'image")
