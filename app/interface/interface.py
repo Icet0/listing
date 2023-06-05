@@ -330,9 +330,9 @@ def my_app():
             text ="Choisir les fichiers d'import pour manageo").grid(row=0,column=0)   
         
         Label(win, text="Choisissez un csv de compagnie à importer",width=40).grid(column=2, row=0,ipadx=5,ipady=5,sticky=N)
-        comp_choix = Button(win, text="Choisir fichier compagnie", width=20, command=choisir_fichier_cmp_mng).grid(column=2,row=3,padx=5,pady=5)
+        comp_choix = Button(win, text="Choisir fichiers compagnies", width=20, command=choisir_fichier_cmp_mng).grid(column=2,row=3,padx=5,pady=5)
         Label(win, text="Choisissez un csv de contact à importer",width=40).grid(column=2, row=5,ipadx=5,ipady=5,sticky=N)
-        cont_choix = Button(win, text="Choisir fichier contacts", width=20, command=choisir_fichier_cont_mng).grid(column=2,row=7,padx=5,pady=5)
+        cont_choix = Button(win, text="Choisir fichiers contacts", width=20, command=choisir_fichier_cont_mng).grid(column=2,row=7,padx=5,pady=5)
         
         
         b_valider_mng = Button(win, text="Valider",width=20, command=valider_mng, state=DISABLED)

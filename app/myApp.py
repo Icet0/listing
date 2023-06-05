@@ -970,7 +970,7 @@ def netoyage_manageo(df,FICHIER_OUTPUT,hapikey,owner_selected,df_contact=None):
     import_id = insert.insertion_hubspot(FICHIER_OUTPUT,hapikey,data)
     
     
-    wait = input("Appuyez sur une touche pour continuer . . . ")
+    # wait = input("Appuyez sur une touche pour continuer . . . ")
     #Attendre la fin de l'importation
     if import_id != None:
         try:
@@ -1112,7 +1112,7 @@ def netoyage_manageo(df,FICHIER_OUTPUT,hapikey,owner_selected,df_contact=None):
         
         
         # #!--------
-        wait = input("Appuyez sur une touche pour continuer . . . ")
+        # wait = input("Appuyez sur une touche pour continuer . . . ")
         import_id = insert.insertion_hubspot(FICHIER_OUTPUT,hapikey,data_contact)
         if import_id != None:
             try:
