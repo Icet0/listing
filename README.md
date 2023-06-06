@@ -20,7 +20,7 @@ Lien : [Manageo.com](mlist.manageo.com/ "lien manageo")
 ![ Texte alternatif](/docListing/ML_home.png "Manageo")
 
 2. Pour le paramétrage, il faut sélectionner tous les champs comme sur l'image ci-dessous. (en gardant toutes les options à l'intérieur)
-Le seul champ variable est celui des Emails Fonctionnels, on peut le selectionner ou non commme bon nous semble.
+Le seul champ variable est celui des Emails Fonctionnels, on peut le selectionner ou non comme bon nous semble.
 
 ![ Texte alternatif](/docListing/ML_parametrage.png "Manageo")
 
