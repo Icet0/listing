@@ -17,21 +17,21 @@ Lien : [Manageo.com](mlist.manageo.com/ "lien manageo")
 
 1. Filtrage des entreprises, on peut choisir le type de filtre que l'on veut pour réduire le nombre d'entreprises à télécharger.
 
-![ Texte alternatif](/docListing/ML_home.png "Manageo")
+![ ML_home](/docListing/ML_home.png "Manageo")
 
 2. Pour le paramétrage, il faut sélectionner tous les champs comme sur l'image ci-dessous. (en gardant toutes les options à l'intérieur)
 Le seul champ variable est celui des Emails Fonctionnels, on peut le selectionner ou non comme bon nous semble.
 
-![ Texte alternatif](/docListing/ML_parametrage.png "Manageo")
+![ ML_parametrage](/docListing/ML_parametrage.png "Manageo")
 
 3. Ensuite vient l'exportation, il suffit de sélectionner "CSV" et de cliquer sur "Exporter"
 
-![ Texte alternatif](/docListing/ML_exportation.png "Manageo")
+![ ML_exportation](/docListing/ML_exportation.png "Manageo")
 
 4. Une fois fait, nous somme redirigé vers la page d'exportation, il faut cliquer sur "Télécharger" (icone csv) pour télécharger le fichier CSV.
 On peut aussi modifier son nom en cliquant sur le crayon à droite du nom du fichier. (On peut aussi le faire lors du téléchargement ou après)
 
-![ Texte alternatif](/docListing/ML_listes.png "Manageo")
+![ Ml_listes](/docListing/Ml_listes.png "Manageo")
 
 ---
 
