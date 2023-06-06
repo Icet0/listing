@@ -981,9 +981,8 @@ def netoyage_manageo(df,FICHIER_OUTPUT,hapikey,owner_selected,df_contact=None):
             pass
         
     if(dfc is not None):
-        # time.sleep(10)
+        time.sleep(10)#For get all Companies
         myCompanies = getAllCompanies(hapikey,ref)
-        
         for index, row in dfc.iterrows():
             company_name = row['companyID']
             if(company_name in myCompanies['properties.name'].values):
@@ -1253,8 +1252,12 @@ def getAllCompanies(apikey,ref):
         # Normalisation du JSON en DataFrame
     df = pd.json_normalize(companies)
 
-    # Sélection des colonnes souhaitées
-    df = df.loc[:, ['id', 'properties.name','properties.id_unique']]    
+    print("myDF",df)
+    try:
+        # Sélection des colonnes souhaitées
+        df = df.loc[:, ['id', 'properties.name','properties.id_unique']]    
+    except:
+        print("erreur")
     return df
     
     

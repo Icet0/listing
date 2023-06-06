@@ -35,7 +35,7 @@ def insertion_hubspot(FICHIER_OUTPUT,api_key,data):
     import_id = None
     # Check if the request was successful
     if response.status_code == 200 or response.status_code == 202:
-      print(response.status_code)
+      print("Response status code : ",response.status_code)
       # print("response headers ",response.headers)
       # print("response encoding ",response.encoding)
       # print("response text : ",response.text.encode('utf8'))
@@ -46,5 +46,5 @@ def insertion_hubspot(FICHIER_OUTPUT,api_key,data):
     else:
       print(f"Error: {response.status_code}")
         
-    print("response text : ",response.text.encode('utf8'))
+    # print("response text : ",response.text.encode('utf8'))
     return import_id

@@ -1,33 +1,42 @@
 # listing app
 
-# WINDOWS EXE
+Application de listing pour Hubspot
 
-You can download this repository and access to the executable in the directory : [myApp.exe](app/dist)
-
-# MAC OS & LINUX EXECUTABLE
-
-You can download this repository and access to the executable in the directory : [myApp](app/dist)
-
-# Compilation
-
-Se placer dans le dossier app
-
-$cd app
-
-et utiliser
-
-$ pyinstaller -F myApp
-
-# Lancement sans executable
+## Lancement sans executable
 
 Se placer dans le dossier app   ($ cd app)
 Et lancez la commande suivante :
 
 - $ python myApp.py
 
-# Utilisation
+## Utilisation
 
-## Ajouter un listing MANAGEO
+### Téléchargement et création d'un listing ML_liste
+
+Lien : [Manageo.com](mlist.manageo.com/ "lien manageo")
+
+1. Filtrage des entreprises, on peut choisir le type de filtre que l'on veut pour réduire le nombre d'entreprises à télécharger.
+
+![ Texte alternatif](/docListing/ML_home.png "Manageo")
+
+2. Le paramétrage, il faut sélectionner tous les champs comme sur l'image ci-dessous. (en gardant toutes les options à l'intérieur)
+Le seul champ variable est celui des Emails Fonctionnels, on peut le selectionner ou non commme bon nous semble.
+
+![ Texte alternatif](/docListing/ML_parametrage.png "Manageo")
+
+3. Ensuite vient l'exportation, il suffit de sélectionner "CSV" et de cliquer sur "Exporter"
+
+![ Texte alternatif](/docListing/ML_exportation.png "Manageo")
+
+4. Une fois fait, nous somme redirigé vers la page d'exportation, il faut cliquer sur "Télécharger" (icone csv) pour télécharger le fichier CSV.
+On peut aussi modifier son nom en cliquant sur le crayon à droite du nom du fichier. (On peut aussi le faire lors du téléchargement ou après)
+
+![ Texte alternatif](/docListing/ML_listes.png "Manageo")
+
+---
+
+
+### Ajouter un listing MANAGEO
 
 - Cliquez sur le bouton "MANAGEO"
 
