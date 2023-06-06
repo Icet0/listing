@@ -8,6 +8,8 @@ Se placer dans le dossier app   ($ cd app)
 Et lancez la commande suivante :
 
 - $ python myApp.py
+OU
+- $ python3 myApp.py
 
 ## Utilisation
 
