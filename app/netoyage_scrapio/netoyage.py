@@ -164,46 +164,65 @@ def netoyage_codeZip(input):
 
 
 def globalClean(input):
-    try:
-        input = input.drop(['Google ID','Est fermé','Site internet','Page de contact 2','Page de contact 3',
-                        'Page de contact 4','Page de contact 5','Tous les liens facebook','Tous les liens Youtube',
-                        'Tous les liens Twitter','Tous les liens Instagram','Tous les liens Linkedin',
-                        'Technologies du site','Pixels publicitaires du site','Adresse complète',
-                        'Meta generator du site','Langue du site','District','Meta description du site',
-                        'Meta keywords du site', 'Meta image du site','Caractéristiques',
-                        "Heures d'ouverture",'Est revendiqué','Titre du site',
-                        'Toutes les photos','Occupation','Photo 1','Photo 2',"Nombre d'avis par note",
-                        'Nombre de photos',"Nombre d'avis","Note des avis",
-                        "Gamme de prix","ID des avis","Lien Instagram",
-                        'Lien Linkedin','Lien Youtube','Lien Twitter','Lien Facebook',
-                        'ID du propriétaire','Place ID','Email 2','Email 3','Email 4','Email 5','Adresse 2',
-                        'Longitude','Latitude','Lien',
-                        'Division de niveau 2','Nom du propriétaire','Tous les emails','Toutes les pages de contact',
-                            'Code pays','Tous les types','État'
-                        ],axis=1)
-    except:
-        try:
-            input = input.drop(['Google ID','Est fermé','Site internet','Page de contact 2','Page de contact 3',
-                        'Page de contact 4','Page de contact 5','Tous les liens facebook','Tous les liens Youtube',
-                        'Tous les liens Twitter','Tous les liens Instagram','Tous les liens Linkedin',
-                        'Technologies du site','Pixels publicitaires du site','Adresse complète',
-                        'Meta generator du site','Langue du site','District','Meta description du site',
-                        'Meta keywords du site', 'Meta image du site','Caractéristiques',
-                        "Heures d'ouverture",'Est revendiqué','Titre du site',
-                        'Toutes les photos','Occupation','Photo 1','Photo 2',"Nombre d'avis par note",
-                        'Nombre de photos',"Nombre d'avis","Note des avis",
-                        "Gamme de prix","ID des avis","Lien Instagram",
-                        'Lien Linkedin','Lien Youtube','Lien Twitter','Lien Facebook',
-                        'ID du propriétaire','Email 2','Email 3','Email 4','Email 5','Adresse 2',
-                        'Longitude','Latitude','Lien',
-                        'Division de niveau 2','Nom du propriétaire','Tous les emails','Toutes les pages de contact',
-                            'Code pays','Tous les types','État'
-                        ],axis=1)
-        except:
-            print(input.columns)
-            print('Bad columns name')
+    # try:
+    #     input = input.drop(['Google ID','Est fermé','Site internet','Page de contact 2','Page de contact 3',
+    #                     'Page de contact 4','Page de contact 5','Tous les liens facebook','Tous les liens Youtube',
+    #                     'Tous les liens Twitter','Tous les liens Instagram','Tous les liens Linkedin',
+    #                     'Technologies du site','Pixels publicitaires du site','Adresse complète',
+    #                     'Meta generator du site','Langue du site','District','Meta description du site',
+    #                     'Meta keywords du site', 'Meta image du site','Caractéristiques',
+    #                     "Heures d'ouverture",'Est revendiqué','Titre du site',
+    #                     'Toutes les photos','Occupation','Photo 1','Photo 2',"Nombre d'avis par note",
+    #                     'Nombre de photos',"Nombre d'avis","Note des avis",
+    #                     "Gamme de prix","ID des avis","Lien Instagram",
+    #                     'Lien Linkedin','Lien Youtube','Lien Twitter','Lien Facebook',
+    #                     'ID du propriétaire','Place ID','Email 2','Email 3','Email 4','Email 5','Adresse 2',
+    #                     'Longitude','Latitude','Lien',
+    #                     'Division de niveau 2','Nom du propriétaire','Tous les emails','Toutes les pages de contact',
+    #                         'Code pays','Tous les types','État'
+    #                     ],axis=1)
+    # except:
+    #     try:
+    #         input = input.drop(['Google ID','Est fermé','Site internet','Page de contact 2','Page de contact 3',
+    #                     'Page de contact 4','Page de contact 5','Tous les liens facebook','Tous les liens Youtube',
+    #                     'Tous les liens Twitter','Tous les liens Instagram','Tous les liens Linkedin',
+    #                     'Technologies du site','Pixels publicitaires du site','Adresse complète',
+    #                     'Meta generator du site','Langue du site','District','Meta description du site',
+    #                     'Meta keywords du site', 'Meta image du site','Caractéristiques',
+    #                     "Heures d'ouverture",'Est revendiqué','Titre du site',
+    #                     'Toutes les photos','Occupation','Photo 1','Photo 2',"Nombre d'avis par note",
+    #                     'Nombre de photos',"Nombre d'avis","Note des avis",
+    #                     "Gamme de prix","ID des avis","Lien Instagram",
+    #                     'Lien Linkedin','Lien Youtube','Lien Twitter','Lien Facebook',
+    #                     'ID du propriétaire','Email 2','Email 3','Email 4','Email 5','Adresse 2',
+    #                     'Longitude','Latitude','Lien',
+    #                     'Division de niveau 2','Nom du propriétaire','Tous les emails','Toutes les pages de contact',
+    #                         'Code pays','Tous les types','État'
+    #                     ],axis=1)
+    #     except:
+    #         print(input.columns)
+    #         print('Bad columns name')
+    columns_to_keep = [
+        "Nom", 
+        "Type principal", 
+        "Site internet (url racine)", 
+        "Téléphone", 
+        "Téléphone international", 
+        "Fuseau horaire", 
+        "Adresse 1", 
+        "Ville", 
+        "Code postal", 
+        "Division de niveau 1", 
+        "Pays", 
+        "Email", 
+        "Page de contact 1",
+        "Lien_réseaux_sociaux",
+        "Unique_Email"
+    ]
     
-    input = input.rename(columns={"Type principal":"Activité"})
+    # Garder seulement les colonnes qui sont dans columns_to_keep
+    input = input.loc[:, input.columns.isin(columns_to_keep)]
+    # input = input.rename(columns={"Type principal":"Activité"})
     input = input.rename(columns={"Téléphone international":"Téléphone suplémentaire"})
     input = input.rename(columns={"Division de niveau 1":"Etat"})
     input = input.assign(provenance="scrap.io")

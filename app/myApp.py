@@ -558,12 +558,7 @@ def netoyage_scraperIo(df,FICHIER_OUTPUT,hapikey,owner_selected):
                 "propertyName": "secteurs_d_activite",
                 "idColumnType": None
             },
-    #           {
-    #             "columnObjectTypeId": "0-2",
-    #             "columnName": "Tous les types",
-    #             "propertyName": "Tous_les_types",
-    #             "idColumnType": None
-    #           },
+
                 {
                 "columnObjectTypeId": "0-2",
                 "columnName": "Site internet (url racine)",
@@ -612,12 +607,7 @@ def netoyage_scraperIo(df,FICHIER_OUTPUT,hapikey,owner_selected):
                 "propertyName": "state",
                 "idColumnType": None
             },
-    #             {
-    #             "columnObjectTypeId": "0-2",
-    #             "columnName": "Division de niveau 2",
-    #             "propertyName": "Division_de_niveau_2",
-    #             "idColumnType": None
-    #           },
+
                 {
                 "columnObjectTypeId": "0-2",
                 "columnName": "Pays",
