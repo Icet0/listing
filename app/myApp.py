@@ -8,6 +8,8 @@ import numpy as np
 import copy
 
 import requests
+from urlParser.parser import extract_domain
+from csvReader.reader import read_csv_with_autodetect
 import netoyage_CDProject.netoyage_cdp as ncdp
 from hubspot_api.requests import owner
 from interface.interface import my_app
@@ -110,32 +112,37 @@ def main():
         
     else:
     
-        try:
-            df_csv = pd.read_csv (str(FICHIER_INPUT),encoding='utf8', )
-        except:
-            try:
-                df_csv = pd.read_csv (str(FICHIER_INPUT),sep="\t",encoding='utf8')     
-            except:
-                try:
-                    df_csv = pd.read_csv (str(FICHIER_INPUT),sep=";",encoding='utf8')
-                except :
-                    try:
-                        df_csv = pd.read_csv (str(FICHIER_INPUT),encoding='latin-1', )
-                    except:
-                        try:
-                            df_csv = pd.read_csv (str(FICHIER_INPUT),sep=";",encoding='latin-1')
-                        except:
-                            try:
-                                df_csv = pd.read_csv (str(FICHIER_INPUT),sep="\t",encoding='latin-1')
-                            except :
-                                print('read_csv error : '+str("!"))
-    print("columns",df_csv.columns)
+        # try:
+        #     df_csv = pd.read_csv (str(FICHIER_INPUT),encoding='utf8', )
+        # except:
+        #     try:
+        #         df_csv = pd.read_csv (str(FICHIER_INPUT),sep="\t",encoding='utf8')     
+        #     except:
+        #         try:
+        #             df_csv = pd.read_csv (str(FICHIER_INPUT),sep=";",encoding='utf8')
+        #         except :
+        #             try:
+        #                 df_csv = pd.read_csv (str(FICHIER_INPUT),encoding='latin-1', )
+        #             except:
+        #                 try:
+        #                     df_csv = pd.read_csv (str(FICHIER_INPUT),sep=";",encoding='latin-1')
+        #                 except:
+        #                     try:
+        #                         df_csv = pd.read_csv (str(FICHIER_INPUT),sep="\t",encoding='latin-1')
+        #                     except :
+        #                         print('read_csv error : '+str("!"))
+        
+        df_csv = read_csv_with_autodetect(FICHIER_INPUT)
+    if df_csv is not None:
+        print("\nMy columns : \n",df_csv.columns)
     df = pd.DataFrame(df_csv)
            
     
     if(os.environ.get("manageo") == "True"):
         netoyage_manageo(df,FICHIER_OUTPUT,hapikey,owner_selected,df_contact)
     else:
+        print("\n\n DF columns : ",len(df.columns))
+
         if('Google ID' in df.columns):
             flag = 0
             netoyage_scraperIo(df,FICHIER_OUTPUT,hapikey,owner_selected)
@@ -310,6 +317,7 @@ def netoyage_CdProject(df,FICHIER_OUTPUT,hapikey,owner_selected):
     df_CDProject_tmp = df_CDProject_tmp.assign(leadStatus="NEW")
     df_CDProject_tmp = df_CDProject_tmp.assign(id="NAN")
     df_CDProject_tmp['id'] = df_CDProject_tmp['Nom']+df_CDProject_tmp['Téléphone']
+    
     df_CDProject_tmp,_ = add_refListing(df_CDProject_tmp,os.environ.get("name_fichier"),"CdProject")
 
     # EXPORT CSV
@@ -515,6 +523,9 @@ def netoyage_scraperIo(df,FICHIER_OUTPUT,hapikey,owner_selected):
     df_clean = df_clean[(df_clean['Téléphone'] != '' ) | (df_clean['Email'] !='') | (df_clean['Téléphone suplémentaire']!= '')
                    | (df_clean['Site internet (url racine)']!= '') | (df_clean['Page de contact 1']!= '')]
 
+    #URL Only ! (Second unique id)
+    df.clean = df_clean[df_clean['Site internet (url racine)'] != '']
+    
 
     # ? BLACLIST
     df_clean = removeBlackList(df_clean,apikey=hapikey)
@@ -529,7 +540,10 @@ def netoyage_scraperIo(df,FICHIER_OUTPUT,hapikey,owner_selected):
     df_clean = df_clean.assign(leadStatus="NEW")
     df_clean = df_clean.assign(id="NAN")
     df_clean['id'] = df_clean['Nom']+df_clean['Téléphone']
-    print(df_clean['id'])
+    df_clean['url_unique'] = df_clean['Site internet (url racine)'].apply(extract_domain)
+    # print(df_clean['id'])
+    # print(df_clean['url_unique'])
+
     df_clean,_ = add_refListing(df_clean,os.environ.get("name_fichier"),"scrap.io")
     # EXPORT CSV
     df_clean.to_csv(FICHIER_OUTPUT,index=False,encoding='utf-8')
@@ -657,13 +671,19 @@ def netoyage_scraperIo(df,FICHIER_OUTPUT,hapikey,owner_selected):
                 "idColumnType": None
             },
                 #UNIQUE DOUBLONS
-                {
+            {
                 "columnObjectTypeId": "0-2",
                 "columnName": "id",
                 "propertyName": "id_unique",
                 "idColumnType": None
             },
-                {
+            {
+                "columnObjectTypeId": "0-2",
+                "columnName": "url_unique",
+                "propertyName": "url_unique",
+                "idColumnType": None
+            },
+            {
                 "columnObjectTypeId": "0-2",
                 "columnName": "Ref",
                 "propertyName": "ref",
@@ -773,6 +793,8 @@ def netoyage_manageo(df,FICHIER_OUTPUT,hapikey,owner_selected,df_contact=None):
     df_comp = df_comp.assign(leadStatus="NEW")
     df_comp = df_comp.assign(id="NAN")
     df_comp['id'] = df_comp['Nom']+df_comp['Téléphone']
+    df_comp['url_unique'] = df_comp['Site Web'].apply(extract_domain)
+
     print(df_comp['id'])
     # df_clean = add_refListing(df_clean,os.environ.get("name_fichier"),"manageo")
     
@@ -781,6 +803,7 @@ def netoyage_manageo(df,FICHIER_OUTPUT,hapikey,owner_selected,df_contact=None):
         dfc = dfc.assign(id="NAN") 
         dfc.rename(columns={"Raison sociale": "companyID"}, inplace=True)
         dfc['id'] = dfc['Nom']+dfc['companyID']+dfc['Téléphone']+dfc['Email']
+        
         dfc = dfc.drop_duplicates(subset=["id"], keep="first")
 
 
@@ -932,6 +955,11 @@ def netoyage_manageo(df,FICHIER_OUTPUT,hapikey,owner_selected,df_contact=None):
                 "columnObjectTypeId": "0-2",
                 "columnName": "id",
                 "propertyName": "id_unique",
+                "idColumnType": None
+            },{
+                "columnObjectTypeId": "0-2",
+                "columnName": "url_unique",
+                "propertyName": "url_unique",
                 "idColumnType": None
             },
 
